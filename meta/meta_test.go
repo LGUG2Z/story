@@ -1,0 +1,306 @@
+package meta_test
+
+import (
+	"encoding/json"
+	"fmt"
+	"github.com/AlexsJones/kepler/commands/node"
+	"github.com/LGUG2Z/story/meta"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/spf13/afero"
+	"os"
+)
+
+var m meta.Manifest
+
+func packageJSONWithDependencies(dependencies []string) []byte {
+	pkg := node.PackageJSON{
+		Dependencies: make(map[string]string),
+	}
+
+	for _, dep := range dependencies {
+		pkg.Dependencies[dep] = fmt.Sprintf("git+ssh://git@github.com:TestOrg/%s.git", dep)
+	}
+
+	bytes, _ := json.MarshalIndent(pkg, "", "  ")
+	return bytes
+}
+
+func globalMetaWithProjects(projects []string) []byte {
+	global := meta.Manifest{Projects: make(map[string]string)}
+
+	for _, project := range projects {
+		global.Projects[project] = fmt.Sprintf("git@github.com:TestOrg/%s.git", project)
+	}
+
+	bytes, _ := json.MarshalIndent(global, "", "  ")
+	return bytes
+}
+
+func storyMetaWithProjects(name string, projects []string) []byte {
+	story := meta.Manifest{Name: name, Projects: make(map[string]string)}
+
+	for _, project := range projects {
+		story.Projects[project] = fmt.Sprintf("git@github.com:TestOrg/%s.git", project)
+	}
+
+	bytes, _ := json.MarshalIndent(story, "", "  ")
+	return bytes
+}
+
+var _ = Describe("Meta", func() {
+	globalMeta := globalMetaWithProjects([]string{"one", "two", "three"})
+	one := packageJSONWithDependencies([]string{})
+	two := packageJSONWithDependencies([]string{"one", "two"})
+	three := packageJSONWithDependencies([]string{"one", "three"})
+
+	BeforeEach(func() {
+		m = meta.Manifest{Fs: afero.NewMemMapFs()}
+		Expect(afero.WriteFile(m.Fs, ".meta", globalMeta, os.FileMode(0666))).To(Succeed())
+
+		Expect(m.Fs.Mkdir("one", os.FileMode(0666))).To(Succeed())
+		Expect(afero.WriteFile(m.Fs, "one/package.json", one, os.FileMode(0666))).To(Succeed())
+
+		Expect(m.Fs.Mkdir("two", os.FileMode(0666))).To(Succeed())
+		Expect(afero.WriteFile(m.Fs, "two/package.json", two, os.FileMode(0666))).To(Succeed())
+
+		Expect(m.Fs.Mkdir("three", os.FileMode(0666))).To(Succeed())
+		Expect(afero.WriteFile(m.Fs, "three/package.json", three, os.FileMode(0666))).To(Succeed())
+		Expect(os.Setenv("ORGANISATION", "TestOrg")).To(Succeed())
+	})
+
+	AfterEach(func() {
+		Expect(os.Unsetenv("ORGANISATION")).To(Succeed())
+
+	})
+
+	Describe("Reading .meta files", func() {
+		Context("With an invalid story meta file", func() {
+			It("Should return an error", func() {
+				_, err := m.Fs.Create(".meta")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(m.Load(".meta")).NotTo(Succeed())
+			})
+		})
+
+		Context("With a valid story meta file", func() {
+			It("Should be identifiable as a story meta file", func() {
+				story := storyMetaWithProjects("story-1", []string{})
+				Expect(afero.WriteFile(m.Fs, ".meta", story, os.FileMode(0666))).To(Succeed())
+
+				s := meta.Manifest{Fs: m.Fs}
+				Expect(s.Load(".meta")).To(Succeed())
+				Expect(s.IsStory()).To(BeTrue())
+			})
+		})
+
+		Context("With an invalid global meta file", func() {
+			It("Should return an error", func() {
+				_, err := m.Fs.Create(".meta")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(m.Load(".meta")).NotTo(Succeed())
+			})
+		})
+
+		Context("With a valid global meta file", func() {
+			It("Should be identifiable as a global meta file", func() {
+				Expect(m.Load(".meta")).To(Succeed())
+			})
+		})
+
+		Context("With a missing global metal file", func() {
+			It("Should return an error", func() {
+				Expect(m.Fs.Remove(".meta")).To(Succeed())
+				Expect(m.Load(".meta")).NotTo(Succeed())
+			})
+		})
+	})
+
+	Describe("Setting and resetting stories", func() {
+		Context("With no story currently set", func() {
+			Context("With a local story .meta for the requested story", func() {
+				It("Should set the story using the existing story meta", func() {
+					story := storyMetaWithProjects("test-story", []string{"one", "two"})
+					afero.WriteFile(m.Fs, ".meta.test-story", story, os.FileMode(0666))
+
+					Expect(m.Load(".meta")).To(Succeed())
+					Expect(m.SetStory("test-story")).To(Succeed())
+
+					s := meta.Manifest{Fs: m.Fs}
+					Expect(s.Load(".meta")).To(Succeed())
+					Expect(s.Projects).To(HaveKeyWithValue("one", "git@github.com:TestOrg/one.git"))
+					Expect(s.Projects).To(HaveKeyWithValue("two", "git@github.com:TestOrg/two.git"))
+				})
+			})
+		})
+
+		Context("With a story currently set", func() {
+			Context("Resetting to the global meta", func() {
+				It("Should move the current story to a backup file", func() {
+					Expect(m.Load(".meta")).To(Succeed())
+					Expect(m.SetStory("some-story")).To(Succeed())
+					s := meta.Manifest{Fs: m.Fs}
+					Expect(s.Load(".meta")).To(Succeed())
+					Expect(s.IsStory()).To(BeTrue())
+
+					Expect(s.RestoreGlobal()).To(Succeed())
+					Expect(afero.Exists(s.Fs, ".meta.some-story")).To(BeTrue())
+				})
+
+				It("Should set the meta file as the global meta", func() {
+					Expect(m.Load(".meta")).To(Succeed())
+					Expect(m.SetStory("some-story")).To(Succeed())
+					s := meta.Manifest{Fs: m.Fs}
+					Expect(s.Load(".meta")).To(Succeed())
+					Expect(s.IsStory()).To(BeTrue())
+
+					Expect(s.RestoreGlobal()).To(Succeed())
+					g := meta.Manifest{Fs: m.Fs}
+					Expect(s.Load(".meta")).To(Succeed())
+					Expect(g.IsStory()).To(BeFalse())
+				})
+			})
+		})
+	})
+
+	Describe("Adding projects", func() {
+		Context("With no story currently set", func() {
+			It("Should return an error", func() {
+				Expect(m.Load(".meta")).To(Succeed())
+				Expect(m.AddProjects([]string{"one"})).NotTo(Succeed())
+			})
+		})
+
+		Context("With a story set", func() {
+			Context("Adding a project that isn't in the global meta", func() {
+				It("Should skip that project and continue to add valid projects", func() {
+					Expect(m.Load(".meta")).To(Succeed())
+					Expect(m.SetStory("some-story")).To(Succeed())
+					s := meta.Manifest{Fs: m.Fs}
+					Expect(s.Load(".meta")).To(Succeed())
+
+					Expect(s.AddProjects([]string{"one", "not-a-project"})).To(Succeed())
+					Expect(s.Projects).To(HaveKeyWithValue("one", "git@github.com:TestOrg/one.git"))
+					Expect(s.Projects).ToNot(HaveKey("not-a-project"))
+				})
+			})
+
+			Context("Adding a project with no dependencies", func() {
+				It("Should add just the project specified", func() {
+					Expect(m.Load(".meta")).To(Succeed())
+					Expect(m.SetStory("some-story")).To(Succeed())
+					s := meta.Manifest{Fs: m.Fs}
+					Expect(s.Load(".meta")).To(Succeed())
+
+					Expect(s.AddProjects([]string{"one"})).To(Succeed())
+					Expect(s.Projects).To(HaveKeyWithValue("one", "git@github.com:TestOrg/one.git"))
+				})
+
+			})
+
+			Context("Adding a project with dependencies", func() {
+				It("Should log an error and continue if a project has an invalid package.json", func() {
+					Expect(m.Load(".meta")).To(Succeed())
+					Expect(m.SetStory("some-story")).To(Succeed())
+					s := meta.Manifest{Fs: m.Fs}
+					Expect(s.Load(".meta")).To(Succeed())
+
+					Expect(afero.WriteFile(m.Fs, "two/package.json", []byte{}, os.FileMode(0666))).To(Succeed())
+					Expect(s.AddProjects([]string{"two"})).To(Succeed())
+
+					Expect(s.Projects).To(HaveKeyWithValue("two", "git@github.com:TestOrg/two.git"))
+				})
+
+				It("Should the dependencies of the project", func() {
+					Expect(m.Load(".meta")).To(Succeed())
+					Expect(m.SetStory("some-story")).To(Succeed())
+					s := meta.Manifest{Fs: m.Fs}
+					Expect(s.Load(".meta")).To(Succeed())
+
+					Expect(s.AddProjects([]string{"two"})).To(Succeed())
+
+					Expect(s.Projects).To(HaveKeyWithValue("one", "git@github.com:TestOrg/one.git"))
+					Expect(s.Projects).To(HaveKeyWithValue("two", "git@github.com:TestOrg/two.git"))
+				})
+
+				It("Should only add the given project as a primary project", func() {
+					Expect(m.Load(".meta")).To(Succeed())
+					Expect(m.SetStory("some-story")).To(Succeed())
+					s := meta.Manifest{Fs: m.Fs}
+					Expect(s.Load(".meta")).To(Succeed())
+
+					Expect(s.AddProjects([]string{"two"})).To(Succeed())
+
+					Expect(s.Primary).To(HaveKeyWithValue("two", true))
+					Expect(s.Primary).ToNot(HaveKeyWithValue("one", true))
+				})
+			})
+		})
+	})
+
+	Describe("Removing projects", func() {
+		Context("With no story currently set", func() {
+			It("Should return an error", func() {
+				Expect(m.Load(".meta")).To(Succeed())
+				Expect(m.RemoveProjects([]string{"one"})).NotTo(Succeed())
+			})
+		})
+
+		Context("With a story set", func() {
+			Context("Removing an added project with no dependencies", func() {
+				It("Should remove the given project", func() {
+					Expect(m.Load(".meta")).To(Succeed())
+					Expect(m.SetStory("some-story")).To(Succeed())
+					s := meta.Manifest{Fs: m.Fs}
+					Expect(s.Load(".meta")).To(Succeed())
+
+					Expect(s.AddProjects([]string{"one"})).To(Succeed())
+					Expect(s.Projects).To(HaveKeyWithValue("one", "git@github.com:TestOrg/one.git"))
+
+					Expect(s.RemoveProjects([]string{"one"})).To(Succeed())
+					Expect(s.Projects).ToNot(HaveKeyWithValue("one", "git@github.com:TestOrg/one.git"))
+				})
+
+			})
+
+			Context("Removing a project with dependencies", func() {
+				Context("That are not shared by other primary projects", func() {
+					It("Should remove the project and its dependencies", func() {
+						Expect(m.Load(".meta")).To(Succeed())
+						Expect(m.SetStory("some-story")).To(Succeed())
+						s := meta.Manifest{Fs: m.Fs}
+						Expect(s.Load(".meta")).To(Succeed())
+
+						Expect(s.AddProjects([]string{"two"})).To(Succeed())
+						Expect(s.Projects).To(HaveKeyWithValue("one", "git@github.com:TestOrg/one.git"))
+						Expect(s.Projects).To(HaveKeyWithValue("two", "git@github.com:TestOrg/two.git"))
+
+						Expect(s.RemoveProjects([]string{"two"})).To(Succeed())
+						Expect(s.Projects).ToNot(HaveKeyWithValue("one", "git@github.com:TestOrg/one.git"))
+						Expect(s.Projects).ToNot(HaveKeyWithValue("two", "git@github.com:TestOrg/two.git"))
+					})
+				})
+
+				Context("That are shared by other primary projects", func() {
+					It("Should remove the project and leave dependencies which are also in other primary projects", func() {
+						Expect(m.Load(".meta")).To(Succeed())
+						Expect(m.SetStory("some-story")).To(Succeed())
+						s := meta.Manifest{Fs: m.Fs}
+						Expect(s.Load(".meta")).To(Succeed())
+
+						Expect(s.AddProjects([]string{"two"})).To(Succeed())
+						Expect(s.AddProjects([]string{"three"})).To(Succeed())
+						Expect(s.Projects).To(HaveKeyWithValue("one", "git@github.com:TestOrg/one.git"))
+						Expect(s.Projects).To(HaveKeyWithValue("two", "git@github.com:TestOrg/two.git"))
+						Expect(s.Projects).To(HaveKeyWithValue("three", "git@github.com:TestOrg/three.git"))
+
+						Expect(s.RemoveProjects([]string{"three"})).To(Succeed())
+						Expect(s.Projects).To(HaveKeyWithValue("one", "git@github.com:TestOrg/one.git"))
+						Expect(s.Projects).To(HaveKeyWithValue("two", "git@github.com:TestOrg/two.git"))
+						Expect(s.Projects).ToNot(HaveKeyWithValue("three", "git@github.com:TestOrg/three.git"))
+					})
+				})
+			})
+		})
+	})
+})
