@@ -1,10 +1,10 @@
 package main
 
 import (
-	"os"
 	"github.com/LGUG2Z/story/meta"
-	"log"
 	"github.com/spf13/afero"
+	"log"
+	"os"
 )
 
 func main() {
@@ -17,12 +17,22 @@ func main() {
 	}
 
 	switch os.Args[1] {
-	case "reset":
-		if !meta.IsStory() {
+	case "prune":
+		if meta.IsStory() {
+			if err := meta.Prune(); err != nil {
+				log.Fatal(err)
+			}
+		} else {
 			log.Fatal("not working on a story")
 		}
-
-		meta.RestoreGlobal()
+	case "reset":
+		if meta.IsStory() {
+			if err := meta.RestoreGlobal(); err != nil {
+				log.Fatal(err)
+			}
+		} else {
+			log.Fatal("not working on a story")
+		}
 	case "add":
 		if meta.IsStory() {
 			if err := meta.AddProjects(os.Args[2:]); err != nil {

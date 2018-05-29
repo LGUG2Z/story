@@ -9,6 +9,11 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
 	"os"
+	"gopkg.in/src-d/go-git.v4"
+	"io/ioutil"
+	"gopkg.in/src-d/go-git.v4/plumbing/object"
+	"time"
+	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
 var m meta.Manifest
@@ -51,7 +56,7 @@ func storyMetaWithProjects(name string, projects []string) []byte {
 var _ = Describe("Meta", func() {
 	globalMeta := globalMetaWithProjects([]string{"one", "two", "three"})
 	one := packageJSONWithDependencies([]string{})
-	two := packageJSONWithDependencies([]string{"one", "two"})
+	two := packageJSONWithDependencies([]string{"one"})
 	three := packageJSONWithDependencies([]string{"one", "three"})
 
 	BeforeEach(func() {
@@ -211,7 +216,7 @@ var _ = Describe("Meta", func() {
 					Expect(s.Projects).To(HaveKeyWithValue("two", "git@github.com:TestOrg/two.git"))
 				})
 
-				It("Should the dependencies of the project", func() {
+				It("Should add the dependencies of the project", func() {
 					Expect(m.Load(".meta")).To(Succeed())
 					Expect(m.SetStory("some-story")).To(Succeed())
 					s := meta.Manifest{Fs: m.Fs}
@@ -231,8 +236,28 @@ var _ = Describe("Meta", func() {
 
 					Expect(s.AddProjects([]string{"two"})).To(Succeed())
 
-					Expect(s.Primary).To(HaveKeyWithValue("two", true))
-					Expect(s.Primary).ToNot(HaveKeyWithValue("one", true))
+					Expect(s.Primaries).To(HaveKeyWithValue("two", true))
+					Expect(s.Primaries).ToNot(HaveKeyWithValue("one", true))
+				})
+
+				It("Should update dependencies in the package.json by appending #story", func() {
+					Expect(m.Load(".meta")).To(Succeed())
+					Expect(m.SetStory("some-story")).To(Succeed())
+					s := meta.Manifest{Fs: m.Fs}
+					Expect(s.Load(".meta")).To(Succeed())
+
+					Expect(s.AddProjects([]string{"two"})).To(Succeed())
+
+					Expect(s.Projects).To(HaveKeyWithValue("one", "git@github.com:TestOrg/one.git"))
+					Expect(s.Projects).To(HaveKeyWithValue("two", "git@github.com:TestOrg/two.git"))
+
+					bytes, err := afero.ReadFile(m.Fs, "two/package.json")
+					fmt.Println(string(bytes))
+					Expect(err).NotTo(HaveOccurred())
+
+					p := &node.PackageJSON{}
+					Expect(json.Unmarshal(bytes, p)).To(Succeed())
+					Expect(p.Dependencies).To(HaveKeyWithValue("one", "git+ssh://git@github.com:TestOrg/one.git#some-story"))
 				})
 			})
 		})
@@ -261,9 +286,46 @@ var _ = Describe("Meta", func() {
 					Expect(s.Projects).ToNot(HaveKeyWithValue("one", "git@github.com:TestOrg/one.git"))
 				})
 
+				Context("That is a dependency of a primary project", func() {
+					It("Should remove the given project and update the package.json in the primary project", func() {
+						Expect(m.Load(".meta")).To(Succeed())
+						Expect(m.SetStory("some-story")).To(Succeed())
+						s := meta.Manifest{Fs: m.Fs}
+						Expect(s.Load(".meta")).To(Succeed())
+						Expect(s.AddProjects([]string{"two"})).To(Succeed())
+
+						Expect(s.RemoveProjects([]string{"one"})).To(Succeed())
+
+						bytes, err := afero.ReadFile(m.Fs, "two/package.json")
+						fmt.Println(string(bytes))
+						Expect(err).NotTo(HaveOccurred())
+
+						p := &node.PackageJSON{}
+						Expect(json.Unmarshal(bytes, p)).To(Succeed())
+						Expect(p.Dependencies).To(HaveKeyWithValue("one", "git+ssh://git@github.com:TestOrg/one.git"))
+					})
+				})
 			})
 
 			Context("Removing a project with dependencies", func() {
+				It("Should update dependencies in the package.json by removing the #story suffix", func() {
+					Expect(m.Load(".meta")).To(Succeed())
+					Expect(m.SetStory("some-story")).To(Succeed())
+					s := meta.Manifest{Fs: m.Fs}
+					Expect(s.Load(".meta")).To(Succeed())
+					Expect(s.AddProjects([]string{"two"})).To(Succeed())
+
+					Expect(s.RemoveProjects([]string{"two"})).To(Succeed())
+
+					bytes, err := afero.ReadFile(m.Fs, "two/package.json")
+					fmt.Println(string(bytes))
+					Expect(err).NotTo(HaveOccurred())
+
+					p := &node.PackageJSON{}
+					Expect(json.Unmarshal(bytes, p)).To(Succeed())
+					Expect(p.Dependencies).To(HaveKeyWithValue("one", "git+ssh://git@github.com:TestOrg/one.git"))
+				})
+
 				Context("That are not shared by other primary projects", func() {
 					It("Should remove the project and its dependencies", func() {
 						Expect(m.Load(".meta")).To(Succeed())
@@ -300,6 +362,80 @@ var _ = Describe("Meta", func() {
 						Expect(s.Projects).ToNot(HaveKeyWithValue("three", "git@github.com:TestOrg/three.git"))
 					})
 				})
+			})
+		})
+	})
+
+	Describe("Pruning unchanged projects", func() {
+		Context("With projects that point to the same commit on the story branch and master", func() {
+			It("Should prune those projects from the meta file and reset any package.json changes", func() {
+				// L O N G  A S S  S E T U P
+
+				// initial global meta
+				Expect(ioutil.WriteFile(".meta", globalMeta, os.FileMode(0666))).To(Succeed())
+				m.Fs = afero.NewOsFs()
+
+				// initialise a git repo
+				repository, err := git.PlainInit("two", false)
+				Expect(err).NotTo(HaveOccurred())
+
+				// write a package.json for project two
+				Expect(ioutil.WriteFile("two/package.json", two, os.FileMode(0666))).To(Succeed())
+
+				// commit the package.json to master
+				wt, err := repository.Worktree()
+				Expect(err).NotTo(HaveOccurred())
+				_, err = wt.Add("package.json")
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = wt.Commit("package.json commit", &git.CommitOptions{
+					Author: &object.Signature{
+						Name:  "John Doe",
+						Email: "john@doe.org",
+						When:  time.Now(),
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				// checkout a new story branch
+				head, err := repository.Head()
+				Expect(err).NotTo(HaveOccurred())
+
+				ref := plumbing.ReferenceName("refs/heads/some-story")
+
+				err = wt.Checkout(&git.CheckoutOptions{
+					Branch: ref,
+					Hash:   head.Hash(),
+					Create: true,
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				// set a new story and add project two
+				Expect(m.Load(".meta")).To(Succeed())
+				Expect(m.SetStory("some-story")).To(Succeed())
+				s := meta.Manifest{Fs: m.Fs}
+				Expect(s.Load(".meta")).To(Succeed())
+				Expect(s.AddProjects([]string{"two"})).To(Succeed())
+
+				// run the pruner
+				Expect(s.Prune()).To(Succeed())
+
+				// expect that the projects are removed from the story
+				Expect(s.Projects).NotTo(HaveKey("one"))
+				Expect(s.Projects).NotTo(HaveKey("two"))
+
+				// expect that the package.json has been reverted
+				bytes, err := ioutil.ReadFile("two/package.json")
+				Expect(err).NotTo(HaveOccurred())
+
+				p := &node.PackageJSON{}
+				Expect(json.Unmarshal(bytes, p)).To(Succeed())
+				Expect(p.Dependencies).To(HaveKeyWithValue("one", "git+ssh://git@github.com:TestOrg/one.git"))
+
+				Expect(os.RemoveAll("one")).To(Succeed())
+				Expect(os.RemoveAll("two")).To(Succeed())
+				Expect(os.RemoveAll(".meta")).To(Succeed())
+				Expect(os.RemoveAll(".meta.json")).To(Succeed())
 			})
 		})
 	})
