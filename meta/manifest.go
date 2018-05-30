@@ -60,7 +60,7 @@ func (m *Manifest) Prune() error {
 			return err
 		}
 
-		storyHead, err := repository.Head()
+		storyHash, err := repository.ResolveRevision(plumbing.Revision(fmt.Sprintf("refs/heads/%s", m.Name)))
 		if err != nil {
 			return err
 		}
@@ -70,7 +70,7 @@ func (m *Manifest) Prune() error {
 			return err
 		}
 
-		if storyHead.Hash().String() == masterHash.String() {
+		if storyHash.String() == masterHash.String() {
 			if err := m.RemoveProjects([]string{project}); err != nil {
 				return err
 			}
