@@ -367,9 +367,122 @@ var _ = Describe("Meta", func() {
 	})
 
 	Describe("Pruning unchanged projects", func() {
+		Context("With projects that point to different commits on the story branch and master", func() {
+			It("Should not prone those projects from the meta file", func() {
+				// initial global meta
+				Expect(ioutil.WriteFile(".meta", globalMeta, os.FileMode(0666))).To(Succeed())
+				m.Fs = afero.NewOsFs()
+
+				// initialise the git repos
+				r1, err := git.PlainInit("one", false)
+				Expect(err).NotTo(HaveOccurred())
+				r2, err := git.PlainInit("two", false)
+				Expect(err).NotTo(HaveOccurred())
+
+				// write package.json files
+				Expect(ioutil.WriteFile("one/package.json", one, os.FileMode(0666))).To(Succeed())
+				Expect(ioutil.WriteFile("two/package.json", two, os.FileMode(0666))).To(Succeed())
+
+				// commit the package.json files to master
+				wt1, err := r1.Worktree()
+				Expect(err).NotTo(HaveOccurred())
+				_, err = wt1.Add("package.json")
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = wt1.Commit("package.json commit", &git.CommitOptions{
+					Author: &object.Signature{
+						Name:  "John Doe",
+						Email: "john@doe.org",
+						When:  time.Now(),
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				wt2, err := r2.Worktree()
+				Expect(err).NotTo(HaveOccurred())
+				_, err = wt2.Add("package.json")
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = wt2.Commit("package.json commit", &git.CommitOptions{
+					Author: &object.Signature{
+						Name:  "John Doe",
+						Email: "john@doe.org",
+						When:  time.Now(),
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				// checkout a new story branch on both projects
+				ref := plumbing.ReferenceName("refs/heads/some-story")
+
+				h1, err := r1.Head()
+				Expect(err).NotTo(HaveOccurred())
+
+				err = wt1.Checkout(&git.CheckoutOptions{
+					Branch: ref,
+					Hash:   h1.Hash(),
+					Create: true,
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				h2, err := r2.Head()
+				Expect(err).NotTo(HaveOccurred())
+
+				err = wt2.Checkout(&git.CheckoutOptions{
+					Branch: ref,
+					Hash:   h2.Hash(),
+					Create: true,
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				// set a new story and add project two
+				Expect(m.Load(".meta")).To(Succeed())
+				Expect(m.SetStory("some-story")).To(Succeed())
+				s := meta.Manifest{Fs: m.Fs}
+				Expect(s.Load(".meta")).To(Succeed())
+				Expect(s.AddProjects([]string{"two"})).To(Succeed())
+
+				// commit new package.json to story branch
+				_, err = wt2.Add("package.json")
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = wt2.Commit("package.json story commit", &git.CommitOptions{
+					Author: &object.Signature{
+						Name:  "John Doe",
+						Email: "john@doe.org",
+						When:  time.Now(),
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				// run the pruner
+				Expect(s.Prune()).To(Succeed())
+
+				// expect that the projects are removed from the story
+				Expect(s.Projects).NotTo(HaveKey("one"))
+				Expect(s.Projects).To(HaveKey("two"))
+
+				// expect that the package.json has been reverted
+				bytes, err := ioutil.ReadFile("two/package.json")
+				Expect(err).NotTo(HaveOccurred())
+
+				p := &node.PackageJSON{}
+				Expect(json.Unmarshal(bytes, p)).To(Succeed())
+				Expect(p.Dependencies).To(HaveKeyWithValue("one", "git+ssh://git@github.com:TestOrg/one.git"))
+
+				Expect(os.RemoveAll("one")).To(Succeed())
+				Expect(os.RemoveAll("two")).To(Succeed())
+				Expect(os.RemoveAll(".meta")).To(Succeed())
+				Expect(os.RemoveAll(".meta.json")).To(Succeed())
+			})
+		})
+
 		Context("With projects that point to the same commit on the story branch and master", func() {
 			It("Should prune those projects from the meta file and reset any package.json changes", func() {
 				// L O N G  A S S  S E T U P
+
+				// TODO: Make this all work regardless of which directory the test command is called from
+				// TODO: Needs to be called from within the meta directory for now
 
 				// initial global meta
 				Expect(ioutil.WriteFile(".meta", globalMeta, os.FileMode(0666))).To(Succeed())
