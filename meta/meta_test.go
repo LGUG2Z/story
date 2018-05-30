@@ -8,12 +8,12 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
-	"os"
 	"gopkg.in/src-d/go-git.v4"
-	"io/ioutil"
-	"gopkg.in/src-d/go-git.v4/plumbing/object"
-	"time"
 	"gopkg.in/src-d/go-git.v4/plumbing"
+	"gopkg.in/src-d/go-git.v4/plumbing/object"
+	"io/ioutil"
+	"os"
+	"time"
 )
 
 var m meta.Manifest
