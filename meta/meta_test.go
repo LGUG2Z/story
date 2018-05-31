@@ -489,19 +489,21 @@ var _ = Describe("Meta", func() {
 				m.Fs = afero.NewOsFs()
 
 				// initialise a git repo
-				repository, err := git.PlainInit("two", false)
+				_, err := git.PlainInit("one", false)
+				Expect(err).NotTo(HaveOccurred())
+				r2, err := git.PlainInit("two", false)
 				Expect(err).NotTo(HaveOccurred())
 
 				// write a package.json for project two
 				Expect(ioutil.WriteFile("two/package.json", two, os.FileMode(0666))).To(Succeed())
 
 				// commit the package.json to master
-				wt, err := repository.Worktree()
+				wt2, err := r2.Worktree()
 				Expect(err).NotTo(HaveOccurred())
-				_, err = wt.Add("package.json")
+				_, err = wt2.Add("package.json")
 				Expect(err).NotTo(HaveOccurred())
 
-				_, err = wt.Commit("package.json commit", &git.CommitOptions{
+				_, err = wt2.Commit("package.json commit", &git.CommitOptions{
 					Author: &object.Signature{
 						Name:  "John Doe",
 						Email: "john@doe.org",
@@ -511,12 +513,12 @@ var _ = Describe("Meta", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				// checkout a new story branch
-				head, err := repository.Head()
+				head, err := r2.Head()
 				Expect(err).NotTo(HaveOccurred())
 
 				ref := plumbing.ReferenceName("refs/heads/some-story")
 
-				err = wt.Checkout(&git.CheckoutOptions{
+				err = wt2.Checkout(&git.CheckoutOptions{
 					Branch: ref,
 					Hash:   head.Hash(),
 					Create: true,

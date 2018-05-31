@@ -60,18 +60,35 @@ func (m *Manifest) Prune() error {
 			return err
 		}
 
-		storyHash, err := repository.ResolveRevision(plumbing.Revision(fmt.Sprintf("refs/heads/%s", m.Name)))
+		storyRevision := plumbing.Revision(fmt.Sprintf("refs/heads/%s", m.Name))
+		masterRevision := plumbing.Revision("master")
+
+		storyHash, err := repository.ResolveRevision(storyRevision)
 		if err != nil {
 			return err
 		}
 
-		masterHash, err := repository.ResolveRevision(plumbing.Revision("master"))
+		masterHash, err := repository.ResolveRevision(masterRevision)
 		if err != nil {
 			return err
 		}
 
 		if storyHash.String() == masterHash.String() {
 			if err := m.RemoveProjects([]string{project}); err != nil {
+				return err
+			}
+
+			storyReference := plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", m.Name))
+			wt, err := repository.Worktree()
+			if err != nil {
+				return err
+			}
+
+			if err := wt.Checkout(&git.CheckoutOptions{Force: true}); err != nil {
+				return err
+			}
+
+			if repository.Storer.RemoveReference(storyReference); err != nil {
 				return err
 			}
 
