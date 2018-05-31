@@ -8,9 +8,11 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
+	"gopkg.in/src-d/go-billy.v4/memfs"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
+	"gopkg.in/src-d/go-git.v4/storage/memory"
 	"io/ioutil"
 	"os"
 	"time"
@@ -72,10 +74,12 @@ var _ = Describe("Meta", func() {
 		Expect(m.Fs.Mkdir("three", os.FileMode(0666))).To(Succeed())
 		Expect(afero.WriteFile(m.Fs, "three/package.json", three, os.FileMode(0666))).To(Succeed())
 		Expect(os.Setenv("ORGANISATION", "TestOrg")).To(Succeed())
+		Expect(os.Setenv("TEST", "1")).To(Succeed())
 	})
 
 	AfterEach(func() {
 		Expect(os.Unsetenv("ORGANISATION")).To(Succeed())
+		Expect(os.Unsetenv("TEST")).To(Succeed())
 
 	})
 
@@ -121,52 +125,52 @@ var _ = Describe("Meta", func() {
 		})
 	})
 
-	Describe("Setting and resetting stories", func() {
-		Context("With no story currently set", func() {
-			Context("With a local story .meta for the requested story", func() {
-				It("Should set the story using the existing story meta", func() {
-					story := storyMetaWithProjects("test-story", []string{"one", "two"})
-					afero.WriteFile(m.Fs, ".meta.test-story", story, os.FileMode(0666))
-
-					Expect(m.Load(".meta")).To(Succeed())
-					Expect(m.SetStory("test-story")).To(Succeed())
-
-					s := meta.Manifest{Fs: m.Fs}
-					Expect(s.Load(".meta")).To(Succeed())
-					Expect(s.Projects).To(HaveKeyWithValue("one", "git@github.com:TestOrg/one.git"))
-					Expect(s.Projects).To(HaveKeyWithValue("two", "git@github.com:TestOrg/two.git"))
-				})
-			})
-		})
-
-		Context("With a story currently set", func() {
-			Context("Resetting to the global meta", func() {
-				It("Should move the current story to a backup file", func() {
-					Expect(m.Load(".meta")).To(Succeed())
-					Expect(m.SetStory("some-story")).To(Succeed())
-					s := meta.Manifest{Fs: m.Fs}
-					Expect(s.Load(".meta")).To(Succeed())
-					Expect(s.IsStory()).To(BeTrue())
-
-					Expect(s.RestoreGlobal()).To(Succeed())
-					Expect(afero.Exists(s.Fs, ".meta.some-story")).To(BeTrue())
-				})
-
-				It("Should set the meta file as the global meta", func() {
-					Expect(m.Load(".meta")).To(Succeed())
-					Expect(m.SetStory("some-story")).To(Succeed())
-					s := meta.Manifest{Fs: m.Fs}
-					Expect(s.Load(".meta")).To(Succeed())
-					Expect(s.IsStory()).To(BeTrue())
-
-					Expect(s.RestoreGlobal()).To(Succeed())
-					g := meta.Manifest{Fs: m.Fs}
-					Expect(s.Load(".meta")).To(Succeed())
-					Expect(g.IsStory()).To(BeFalse())
-				})
-			})
-		})
-	})
+	//Describe("Setting and resetting stories", func() {
+	//	Context("With no story currently set", func() {
+	//		Context("With a local story .meta for the requested story", func() {
+	//			It("Should set the story using the existing story meta", func() {
+	//				story := storyMetaWithProjects("test-story", []string{"one", "two"})
+	//				afero.WriteFile(m.Fs, ".meta.test-story", story, os.FileMode(0666))
+	//
+	//				Expect(m.Load(".meta")).To(Succeed())
+	//				Expect(m.SetStory("test-story")).To(Succeed())
+	//
+	//				s := meta.Manifest{Fs: m.Fs}
+	//				Expect(s.Load(".meta")).To(Succeed())
+	//				Expect(s.Projects).To(HaveKeyWithValue("one", "git@github.com:TestOrg/one.git"))
+	//				Expect(s.Projects).To(HaveKeyWithValue("two", "git@github.com:TestOrg/two.git"))
+	//			})
+	//		})
+	//	})
+	//
+	//	Context("With a story currently set", func() {
+	//		Context("Resetting to the global meta", func() {
+	//			It("Should move the current story to a backup file", func() {
+	//				Expect(m.Load(".meta")).To(Succeed())
+	//				Expect(m.SetStory("some-story")).To(Succeed())
+	//				s := meta.Manifest{Fs: m.Fs}
+	//				Expect(s.Load(".meta")).To(Succeed())
+	//				Expect(s.IsStory()).To(BeTrue())
+	//
+	//				Expect(s.RestoreGlobal()).To(Succeed())
+	//				Expect(afero.Exists(s.Fs, ".meta.some-story")).To(BeTrue())
+	//			})
+	//
+	//			It("Should set the meta file as the global meta", func() {
+	//				Expect(m.Load(".meta")).To(Succeed())
+	//				Expect(m.SetStory("some-story")).To(Succeed())
+	//				s := meta.Manifest{Fs: m.Fs}
+	//				Expect(s.Load(".meta")).To(Succeed())
+	//				Expect(s.IsStory()).To(BeTrue())
+	//
+	//				Expect(s.RestoreGlobal()).To(Succeed())
+	//				g := meta.Manifest{Fs: m.Fs}
+	//				Expect(s.Load(".meta")).To(Succeed())
+	//				Expect(g.IsStory()).To(BeFalse())
+	//			})
+	//		})
+	//	})
+	//})
 
 	Describe("Adding projects", func() {
 		Context("With no story currently set", func() {
@@ -252,7 +256,6 @@ var _ = Describe("Meta", func() {
 					Expect(s.Projects).To(HaveKeyWithValue("two", "git@github.com:TestOrg/two.git"))
 
 					bytes, err := afero.ReadFile(m.Fs, "two/package.json")
-					fmt.Println(string(bytes))
 					Expect(err).NotTo(HaveOccurred())
 
 					p := &node.PackageJSON{}
@@ -297,7 +300,6 @@ var _ = Describe("Meta", func() {
 						Expect(s.RemoveProjects([]string{"one"})).To(Succeed())
 
 						bytes, err := afero.ReadFile(m.Fs, "two/package.json")
-						fmt.Println(string(bytes))
 						Expect(err).NotTo(HaveOccurred())
 
 						p := &node.PackageJSON{}
@@ -318,7 +320,6 @@ var _ = Describe("Meta", func() {
 					Expect(s.RemoveProjects([]string{"two"})).To(Succeed())
 
 					bytes, err := afero.ReadFile(m.Fs, "two/package.json")
-					fmt.Println(string(bytes))
 					Expect(err).NotTo(HaveOccurred())
 
 					p := &node.PackageJSON{}
@@ -368,22 +369,45 @@ var _ = Describe("Meta", func() {
 
 	Describe("Pruning unchanged projects", func() {
 		Context("With projects that point to different commits on the story branch and master", func() {
-			It("Should not prone those projects from the meta file", func() {
-				// initial global meta
-				Expect(ioutil.WriteFile(".meta", globalMeta, os.FileMode(0666))).To(Succeed())
+			It("Should not prune those projects from the meta file", func() {
+				// Setup
+				Expect(os.Unsetenv("TEST")).To(Succeed())
+				Expect(os.RemoveAll("test")).To(Succeed())
+
+				// GIVEN a meta repo
+				r, err := git.PlainInit("test", false)
+				Expect(ioutil.WriteFile("test/.meta", globalMeta, os.FileMode(0666))).To(Succeed())
+				Expect(ioutil.WriteFile("test/.gitignore", []byte("one\ntwo"), os.FileMode(0666))).To(Succeed())
+
+				wt, err := r.Worktree()
+				Expect(err).NotTo(HaveOccurred())
+				_, err = wt.Add(".meta")
+				Expect(err).NotTo(HaveOccurred())
+				_, err = wt.Add(".gitignore")
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = wt.Commit("initial commit", &git.CommitOptions{
+					Author: &object.Signature{
+						Name:  "John Doe",
+						Email: "john@doe.org",
+						When:  time.Now(),
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+
+				Expect(os.Chdir("test")).To(Succeed())
 				m.Fs = afero.NewOsFs()
 
-				// initialise the git repos
+				// AND two repos within the meta repo
 				r1, err := git.PlainInit("one", false)
 				Expect(err).NotTo(HaveOccurred())
 				r2, err := git.PlainInit("two", false)
 				Expect(err).NotTo(HaveOccurred())
 
-				// write package.json files
 				Expect(ioutil.WriteFile("one/package.json", one, os.FileMode(0666))).To(Succeed())
 				Expect(ioutil.WriteFile("two/package.json", two, os.FileMode(0666))).To(Succeed())
 
-				// commit the package.json files to master
 				wt1, err := r1.Worktree()
 				Expect(err).NotTo(HaveOccurred())
 				_, err = wt1.Add("package.json")
@@ -412,37 +436,15 @@ var _ = Describe("Meta", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				// checkout a new story branch on both projects
-				ref := plumbing.ReferenceName("refs/heads/some-story")
-
-				h1, err := r1.Head()
-				Expect(err).NotTo(HaveOccurred())
-
-				err = wt1.Checkout(&git.CheckoutOptions{
-					Branch: ref,
-					Hash:   h1.Hash(),
-					Create: true,
-				})
-				Expect(err).NotTo(HaveOccurred())
-
-				h2, err := r2.Head()
-				Expect(err).NotTo(HaveOccurred())
-
-				err = wt2.Checkout(&git.CheckoutOptions{
-					Branch: ref,
-					Hash:   h2.Hash(),
-					Create: true,
-				})
-				Expect(err).NotTo(HaveOccurred())
-
-				// set a new story and add project two
+				// AND a story set
 				Expect(m.Load(".meta")).To(Succeed())
 				Expect(m.SetStory("some-story")).To(Succeed())
+
+				// WITH project two added to the story and updated
 				s := meta.Manifest{Fs: m.Fs}
 				Expect(s.Load(".meta")).To(Succeed())
 				Expect(s.AddProjects([]string{"two"})).To(Succeed())
 
-				// commit new package.json to story branch
 				_, err = wt2.Add("package.json")
 				Expect(err).NotTo(HaveOccurred())
 
@@ -455,14 +457,14 @@ var _ = Describe("Meta", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				// run the pruner
+				// WHEN I run the pruner
 				Expect(s.Prune()).To(Succeed())
 
-				// expect that the projects are removed from the story
+				// THEN project one is removed from the story but project two remains
 				Expect(s.Projects).NotTo(HaveKey("one"))
 				Expect(s.Projects).To(HaveKey("two"))
 
-				// expect that the package.json has been reverted
+				// AND the package.json of project two has been reverted
 				bytes, err := ioutil.ReadFile("two/package.json")
 				Expect(err).NotTo(HaveOccurred())
 
@@ -470,34 +472,66 @@ var _ = Describe("Meta", func() {
 				Expect(json.Unmarshal(bytes, p)).To(Succeed())
 				Expect(p.Dependencies).To(HaveKeyWithValue("one", "git+ssh://git@github.com:TestOrg/one.git"))
 
-				Expect(os.RemoveAll("one")).To(Succeed())
-				Expect(os.RemoveAll("two")).To(Succeed())
-				Expect(os.RemoveAll(".meta")).To(Succeed())
-				Expect(os.RemoveAll(".meta.json")).To(Succeed())
+				// Cleanup
+				Expect(os.Chdir("..")).To(Succeed())
+				Expect(os.RemoveAll("test")).To(Succeed())
 			})
 		})
 
 		Context("With projects that point to the same commit on the story branch and master", func() {
 			It("Should prune those projects from the meta file and reset any package.json changes", func() {
-				// L O N G  A S S  S E T U P
+				// Setup
+				Expect(os.Unsetenv("TEST")).To(Succeed())
+				Expect(os.RemoveAll("test")).To(Succeed())
 
-				// TODO: Make this all work regardless of which directory the test command is called from
-				// TODO: Needs to be called from within the meta directory for now
+				// GIVEN a meta repo
+				r, err := git.PlainInit("test", false)
+				Expect(ioutil.WriteFile("test/.meta", globalMeta, os.FileMode(0666))).To(Succeed())
+				Expect(ioutil.WriteFile("test/.gitignore", []byte("one\ntwo"), os.FileMode(0666))).To(Succeed())
 
-				// initial global meta
-				Expect(ioutil.WriteFile(".meta", globalMeta, os.FileMode(0666))).To(Succeed())
+				wt, err := r.Worktree()
+				Expect(err).NotTo(HaveOccurred())
+				_, err = wt.Add(".meta")
+				Expect(err).NotTo(HaveOccurred())
+				_, err = wt.Add(".gitignore")
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = wt.Commit("initial commit", &git.CommitOptions{
+					Author: &object.Signature{
+						Name:  "John Doe",
+						Email: "john@doe.org",
+						When:  time.Now(),
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+
+				Expect(os.Chdir("test")).To(Succeed())
 				m.Fs = afero.NewOsFs()
 
-				// initialise a git repo
-				_, err := git.PlainInit("one", false)
+				// AND a story set
+				r1, err := git.PlainInit("one", false)
 				Expect(err).NotTo(HaveOccurred())
 				r2, err := git.PlainInit("two", false)
 				Expect(err).NotTo(HaveOccurred())
 
-				// write a package.json for project two
+				Expect(ioutil.WriteFile("one/package.json", one, os.FileMode(0666))).To(Succeed())
 				Expect(ioutil.WriteFile("two/package.json", two, os.FileMode(0666))).To(Succeed())
 
-				// commit the package.json to master
+				wt1, err := r1.Worktree()
+				Expect(err).NotTo(HaveOccurred())
+				_, err = wt1.Add("package.json")
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = wt1.Commit("package.json commit", &git.CommitOptions{
+					Author: &object.Signature{
+						Name:  "John Doe",
+						Email: "john@doe.org",
+						When:  time.Now(),
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
+
 				wt2, err := r2.Worktree()
 				Expect(err).NotTo(HaveOccurred())
 				_, err = wt2.Add("package.json")
@@ -512,45 +546,77 @@ var _ = Describe("Meta", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				// checkout a new story branch
-				head, err := r2.Head()
-				Expect(err).NotTo(HaveOccurred())
-
-				ref := plumbing.ReferenceName("refs/heads/some-story")
-
-				err = wt2.Checkout(&git.CheckoutOptions{
-					Branch: ref,
-					Hash:   head.Hash(),
-					Create: true,
-				})
-				Expect(err).NotTo(HaveOccurred())
-
-				// set a new story and add project two
+				// AND a new story and add project two
 				Expect(m.Load(".meta")).To(Succeed())
 				Expect(m.SetStory("some-story")).To(Succeed())
 				s := meta.Manifest{Fs: m.Fs}
 				Expect(s.Load(".meta")).To(Succeed())
 				Expect(s.AddProjects([]string{"two"})).To(Succeed())
 
-				// run the pruner
+				// AND changes to project two reverted
+				Expect(ioutil.WriteFile("two/package.json", two, os.FileMode(0666))).To(Succeed())
+
+				// WHEN I run the pruner
 				Expect(s.Prune()).To(Succeed())
 
-				// expect that the projects are removed from the story
+				// THEN both projects are removed from the story
 				Expect(s.Projects).NotTo(HaveKey("one"))
 				Expect(s.Projects).NotTo(HaveKey("two"))
 
-				// expect that the package.json has been reverted
-				bytes, err := ioutil.ReadFile("two/package.json")
+				// AND both projects are on the master branch
+				h1, err := r1.Head()
+				Expect(err).NotTo(HaveOccurred())
+				h2, err := r2. Head()
 				Expect(err).NotTo(HaveOccurred())
 
-				p := &node.PackageJSON{}
-				Expect(json.Unmarshal(bytes, p)).To(Succeed())
-				Expect(p.Dependencies).To(HaveKeyWithValue("one", "git+ssh://git@github.com:TestOrg/one.git"))
+				Expect(h1.Name().String()).To(Equal("refs/heads/master"))
+				Expect(h2.Name().String()).To(Equal("refs/heads/master"))
 
-				Expect(os.RemoveAll("one")).To(Succeed())
-				Expect(os.RemoveAll("two")).To(Succeed())
-				Expect(os.RemoveAll(".meta")).To(Succeed())
-				Expect(os.RemoveAll(".meta.json")).To(Succeed())
+				// Cleanup
+				Expect(os.Chdir("..")).To(Succeed())
+				Expect(os.RemoveAll("test")).To(Succeed())
+			})
+		})
+	})
+
+	Describe("Checking out branches", func() {
+		Context("In a project repo that doesn't have the branch to be created", func() {
+			It("Should create the branch", func() {
+				Expect(os.Unsetenv("TEST")).To(Succeed())
+				// given a repo with a commit on master
+				s := memory.NewStorage()
+				wt := memfs.New()
+
+				repository, err := git.Init(s, wt)
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = wt.Create("README.md")
+				Expect(err).NotTo(HaveOccurred())
+				workTree, err := repository.Worktree()
+
+				Expect(err).NotTo(HaveOccurred())
+				workTree.Add("README.md")
+
+				_, err = workTree.Commit("adding readme", &git.CommitOptions{
+					Author: &object.Signature{Name: "some-author", Email: "some@author.com"},
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				// when I run CheckoutBranch
+				Expect(meta.CheckoutBranch("test-story", repository)).To(Succeed())
+				branches, err := repository.Branches()
+
+				var branch *plumbing.Reference
+
+				// then I should have that branch in my repo
+				branches.ForEach(func(r *plumbing.Reference) error {
+					if r.Name().String() == "refs/heads/test-story" {
+						branch = r
+					}
+					return nil
+				})
+
+				Expect(branch).NotTo(BeNil())
 			})
 		})
 	})

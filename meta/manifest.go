@@ -3,21 +3,26 @@ package meta
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/AlexsJones/kepler/commands/node"
-	"github.com/spf13/afero"
-	"gopkg.in/src-d/go-git.v4"
-	"gopkg.in/src-d/go-git.v4/plumbing"
 	"os"
 	"strings"
+
+	"github.com/AlexsJones/kepler/commands/node"
+	"github.com/LGUG2Z/blastradius/blastradius"
+	"github.com/spf13/afero"
+	"gopkg.in/src-d/go-billy.v4/osfs"
+	"gopkg.in/src-d/go-git.v4"
+	"gopkg.in/src-d/go-git.v4/plumbing"
+	"gopkg.in/src-d/go-git.v4/storage/filesystem"
 )
 
 // Manifest represents a .meta JSON file, enriched with a "story" key
 type Manifest struct {
-	Fs        afero.Fs          `json:"-"`
-	Global    *Manifest         `json:"-"`
-	Name      string            `json:"story,omitempty"`
-	Primaries map[string]bool   `json:"primaries,omitempty"`
-	Projects  map[string]string `json:"projects,omitempty"`
+	Fs          afero.Fs          `json:"-"`
+	Global      *Manifest         `json:"-"`
+	Name        string            `json:"story,omitempty"`
+	Primaries   map[string]bool   `json:"primaries,omitempty"`
+	Projects    map[string]string `json:"projects,omitempty"`
+	BlastRadius map[string]bool   `json:"blast-radius,omitempty"`
 }
 
 // IsStory checks if the .meta is a story subset or the global .meta file
@@ -39,6 +44,146 @@ func (m *Manifest) Write() error {
 	return nil
 }
 
+func CheckoutBranch(branch string, repository *git.Repository) error {
+	if os.Getenv("TEST") == "1" {
+		return nil
+	}
+
+	workTree, err := repository.Worktree()
+	if err != nil {
+		return fmt.Errorf("getting worktree: %s", err)
+	}
+
+	head, err := repository.Head()
+	ref := plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", branch))
+
+	if branch == "master" {
+		err := workTree.Checkout(&git.CheckoutOptions{})
+		return err
+	}
+
+	err = workTree.Checkout(&git.CheckoutOptions{
+		Branch: ref,
+		Hash:   head.Hash(),
+		Create: true,
+	})
+
+	if err != nil && err.Error() != fmt.Sprintf(`a branch named "refs/heads/%s" already exists`, ref.String()) {
+		err = workTree.Checkout(&git.CheckoutOptions{Branch: ref})
+		return err
+	}
+
+	if err != nil {
+		return fmt.Errorf("creating branch: %s", err)
+	}
+
+	return err
+}
+
+func DeleteBranch(story string, repository *git.Repository) error {
+	if os.Getenv("TEST") == "1" {
+		return nil
+	}
+
+	storyReference := plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", story))
+	workTree, err := repository.Worktree()
+	if err != nil {
+		return err
+	}
+
+	if err := workTree.Checkout(&git.CheckoutOptions{}); err != nil {
+		return err
+	}
+
+	if repository.Storer.RemoveReference(storyReference); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func getRepository(project string) (*git.Repository, error) {
+	if os.Getenv("TEST") == "1" {
+		return nil, nil
+	}
+
+	projectDotGit := fmt.Sprintf("%s/.git", project)
+
+	s, err := filesystem.NewStorage(osfs.New(projectDotGit))
+	if err != nil {
+		return nil, err
+	}
+
+	wt, err := filesystem.NewStorage(osfs.New(project))
+	if err != nil {
+		return nil, err
+	}
+
+	repository, err := git.Open(s, wt.Filesystem())
+	if err != nil {
+		return nil, err
+	}
+
+	return repository, nil
+}
+
+func (m *Manifest) Blast() error {
+	var blastRadius []string
+	blastMap := make(map[string]bool)
+
+	for project := range m.Projects {
+		blastMap[project] = true
+	}
+
+	for project := range m.Projects {
+		calculated, err := blastradius.Calculate(".", project)
+		if err != nil {
+			return err
+		}
+
+		for _, prj := range calculated {
+			if !blastMap[prj] {
+				blastRadius = append(blastRadius, prj)
+				blastMap[prj] = true
+			}
+		}
+	}
+
+	for _, project := range blastRadius {
+		repository, err := getRepository(project)
+		if err != nil {
+			return err
+		}
+
+		err = CheckoutBranch(m.Name, repository)
+		if err != nil {
+			return fmt.Errorf("%s: %s", project, err)
+		}
+
+		if _, exists := m.Projects[project]; !exists {
+			m.Projects[project] = fmt.Sprintf("git@github.com:%s/%s.git", os.Getenv("ORGANISATION"), project)
+		}
+
+		if m.BlastRadius == nil {
+			m.BlastRadius = make(map[string]bool)
+		}
+
+		if !m.BlastRadius[project] {
+			m.BlastRadius[project] = true
+		}
+
+		//UpdatePackageJSON(project, m.Projects)
+	}
+
+	if err := m.Write(); err != nil {
+		return err
+	}
+
+	fmt.Println(strings.Join(blastRadius, ", "))
+
+	return nil
+}
+
 // Prune removes from the story all projects where the head of the current story branch
 // and the master branch are the same, and reverts any changes made to the package.json
 // files of the primary projects that they were included from
@@ -55,9 +200,9 @@ func (m *Manifest) Prune() error {
 	var pruned []string
 
 	for project := range m.Projects {
-		repository, err := git.PlainOpen(project)
+		repository, err := getRepository(project)
 		if err != nil {
-			return err
+			return fmt.Errorf("%s: %s", project, err)
 		}
 
 		storyRevision := plumbing.Revision(fmt.Sprintf("refs/heads/%s", m.Name))
@@ -75,20 +220,6 @@ func (m *Manifest) Prune() error {
 
 		if storyHash.String() == masterHash.String() {
 			if err := m.RemoveProjects([]string{project}); err != nil {
-				return err
-			}
-
-			storyReference := plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", m.Name))
-			wt, err := repository.Worktree()
-			if err != nil {
-				return err
-			}
-
-			if err := wt.Checkout(&git.CheckoutOptions{Force: true}); err != nil {
-				return err
-			}
-
-			if repository.Storer.RemoveReference(storyReference); err != nil {
 				return err
 			}
 
@@ -133,6 +264,16 @@ func (m *Manifest) RemoveProjects(projects []string) error {
 	for _, project := range projects {
 		if _, exists := m.Projects[project]; exists {
 			delete(m.Projects, project)
+
+			repository, err := getRepository(project)
+			if err != nil {
+				return err
+			}
+
+			if err := DeleteBranch(m.Name, repository); err != nil {
+				return err
+			}
+
 			fmt.Printf("removed: %s\n", project)
 		}
 
@@ -207,6 +348,16 @@ func (m *Manifest) AddProjects(projects []string) error {
 
 			if _, exists := m.Projects[project]; !exists {
 				m.Projects[project] = fmt.Sprintf("git@github.com:%s/%s.git", os.Getenv("ORGANISATION"), project)
+
+				repository, err := getRepository(project)
+				if err != nil {
+					return err
+				}
+
+				if err := CheckoutBranch(m.Name, repository); err != nil {
+					return fmt.Errorf("%s: %s", project, err)
+				}
+
 				fmt.Printf("added: %s\n", project)
 			}
 
@@ -247,6 +398,15 @@ func removePrivateDependencies(meta, story *Manifest, project string) ([]string,
 			if _, exists := story.Projects[dep]; exists {
 				delete(story.Projects, dep)
 				removed = append(removed, dep)
+
+				repository, err := getRepository(dep)
+				if err != nil {
+					return nil, err
+				}
+
+				if err := DeleteBranch(story.Name, repository); err != nil {
+					return nil, err
+				}
 
 				storyBranch := fmt.Sprintf("#%s", story.Name)
 				if strings.HasSuffix(p.Dependencies[dep], storyBranch) {
@@ -295,6 +455,15 @@ func addPrivateDependencies(meta, story *Manifest, project string) ([]string, er
 			if _, exists := story.Projects[dep]; !exists {
 				story.Projects[dep] = fmt.Sprintf("git@github.com:%s/%s.git", os.Getenv("ORGANISATION"), dep)
 				added = append(added, dep)
+
+				repository, err := getRepository(dep)
+				if err != nil {
+					return nil, err
+				}
+
+				if err := CheckoutBranch(story.Name, repository); err != nil {
+					return nil, fmt.Errorf("%s: %s", project, err)
+				}
 			}
 
 			if strings.HasSuffix(p.Dependencies[dep], ".git") {
@@ -318,12 +487,28 @@ func addPrivateDependencies(meta, story *Manifest, project string) ([]string, er
 // RestoreGlobal moves the current story file to a backup file and restores the
 // global .meta.json file
 func (m *Manifest) RestoreGlobal() error {
-	if err := m.Fs.Rename(".meta", fmt.Sprintf(".meta.%s", m.Name)); err != nil {
+	if err := m.Load(".meta"); err != nil {
 		return err
 	}
 
-	if err := m.Fs.Rename(".meta.json", ".meta"); err != nil {
+	for project := range m.Projects {
+		repository, err := getRepository(project)
+		if err != nil {
+			return err
+		}
+
+		if err := CheckoutBranch("master", repository); err != nil {
+			return fmt.Errorf("%s: %s", project, err)
+		}
+	}
+
+	repository, err := getRepository(".")
+	if err != nil {
 		return err
+	}
+
+	if err := CheckoutBranch("master", repository); err != nil {
+		return fmt.Errorf("%s: %s", "meta-repo", err)
 	}
 
 	return nil
@@ -332,27 +517,50 @@ func (m *Manifest) RestoreGlobal() error {
 // SetStory moves the current global meta file to a backup file and initialises
 // a new .meta file for the given story
 func (m *Manifest) SetStory(story string) error {
-	if err := m.Fs.Rename(".meta", ".meta.json"); err != nil {
-		return err
-	}
-
-	if err := m.Load(fmt.Sprintf(".meta.%s", story)); err != nil {
-		m.Name = story
-		m.Projects = nil
-		m.Primaries = nil
-	}
-
-	bytes, err := json.MarshalIndent(m, "", "  ")
+	repository, err := getRepository(".")
 	if err != nil {
 		return err
 	}
 
-	if err := afero.WriteFile(m.Fs, ".meta", bytes, os.FileMode(0666)); err != nil {
+	if err := CheckoutBranch(story, repository); err != nil {
+		return fmt.Errorf("%s: %s", "meta-repo", err)
+	}
+
+	_, err = m.Fs.Stat(".meta.json")
+	if err != nil {
+		if err := m.Fs.Rename(".meta", ".meta.json"); err != nil {
+			return err
+		}
+
+		m.Name = story
+		m.Projects = nil
+		m.Primaries = nil
+		m.BlastRadius = nil
+
+		bytes, err := json.MarshalIndent(m, "", "  ")
+		if err != nil {
+			return err
+		}
+
+		return afero.WriteFile(m.Fs, ".meta", bytes, os.FileMode(0666))
+	}
+
+	m = &Manifest{Fs: m.Fs}
+	if err := m.Load(".meta"); err != nil {
 		return err
 	}
 
-	if err := m.Fs.Remove(fmt.Sprintf(".meta.%s", story)); err != nil {
-		//
+	if m.Projects != nil {
+		for project := range m.Projects {
+			repository, err := getRepository(project)
+			if err != nil {
+				return err
+			}
+
+			if err := CheckoutBranch(m.Name, repository); err != nil {
+				return fmt.Errorf("%s: %s", project, err)
+			}
+		}
 	}
 
 	return nil

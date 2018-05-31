@@ -17,6 +17,14 @@ func main() {
 	}
 
 	switch os.Args[1] {
+	case "blast":
+		if meta.IsStory() {
+			if err := meta.Blast(); err != nil {
+				log.Fatal(err)
+			}
+		} else {
+			log.Fatal("not working on a story")
+		}
 	case "prune":
 		if meta.IsStory() {
 			if err := meta.Prune(); err != nil {
