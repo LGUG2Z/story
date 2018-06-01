@@ -579,6 +579,68 @@ var _ = Describe("Meta", func() {
 		})
 	})
 
+	Describe("Adding projects within the blast radius", func() {
+		Context("With a project within the blast radius", func() {
+			It("Should add it to the story's .meta file", func() {
+				Expect(m.Load(".meta")).To(Succeed())
+				Expect(m.SetStory("some-story")).To(Succeed())
+				s := meta.Manifest{Fs: m.Fs}
+				Expect(s.Load(".meta")).To(Succeed())
+
+				Expect(afero.WriteFile(m.Fs, "two/package.json", []byte{}, os.FileMode(0666))).To(Succeed())
+				Expect(s.AddProjects([]string{"two"})).To(Succeed())
+				// TODO: Need to update blastradius to use afero.FS
+				Expect(s.Blast()).To(Succeed())
+
+				Expect(s.Projects).To(HaveKeyWithValue("three", "git@github.com:TestOrg/three.git"))
+			})
+		})
+	})
+
+	Describe("Deleting branches", func() {
+		Context("In a project repo that has multiple branches", func() {
+			It("Should delete the specified branch", func() {
+				Expect(os.Unsetenv("TEST")).To(Succeed())
+				// given a repo with a commit on master
+				s := memory.NewStorage()
+				wt := memfs.New()
+
+				repository, err := git.Init(s, wt)
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = wt.Create("README.md")
+				Expect(err).NotTo(HaveOccurred())
+				workTree, err := repository.Worktree()
+
+				Expect(err).NotTo(HaveOccurred())
+				workTree.Add("README.md")
+
+				_, err = workTree.Commit("adding readme", &git.CommitOptions{
+					Author: &object.Signature{Name: "some-author", Email: "some@author.com"},
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				// AND another branch
+				Expect(meta.CheckoutBranch("test-story", repository)).To(Succeed())
+
+				// WHEN I delete that branch
+				Expect(meta.DeleteBranch("test-story", repository)).To(Succeed())
+
+				// THEN I should not see that branch referenced in the repo anymore
+				var branch *plumbing.Reference
+				branches, err := repository.Branches()
+				branches.ForEach(func(r *plumbing.Reference) error {
+					if r.Name().String() == "refs/heads/test-story" {
+						branch = r
+					}
+					return nil
+				})
+
+				Expect(branch).To(BeNil())
+			})
+		})
+	})
+
 	Describe("Checking out branches", func() {
 		Context("In a project repo that doesn't have the branch to be created", func() {
 			It("Should create the branch", func() {

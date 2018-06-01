@@ -13,7 +13,7 @@ func main() {
 
 	meta := meta.Manifest{Fs: afero.NewOsFs()}
 	if err := meta.Load(".meta"); err != nil {
-		log.Fatal("this folder does not contain a .meta file", err)
+		log.Fatal(err)
 	}
 
 	switch os.Args[1] {
