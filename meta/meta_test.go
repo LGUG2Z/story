@@ -3,6 +3,10 @@ package meta_test
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"time"
+
 	"github.com/AlexsJones/kepler/commands/node"
 	"github.com/LGUG2Z/story/meta"
 	. "github.com/onsi/ginkgo"
@@ -13,9 +17,6 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"gopkg.in/src-d/go-git.v4/storage/memory"
-	"io/ioutil"
-	"os"
-	"time"
 )
 
 var m meta.Manifest
@@ -395,7 +396,6 @@ var _ = Describe("Meta", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-
 				Expect(os.Chdir("test")).To(Succeed())
 				m.Fs = afero.NewOsFs()
 
@@ -505,7 +505,6 @@ var _ = Describe("Meta", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-
 				Expect(os.Chdir("test")).To(Succeed())
 				m.Fs = afero.NewOsFs()
 
@@ -566,7 +565,7 @@ var _ = Describe("Meta", func() {
 				// AND both projects are on the master branch
 				h1, err := r1.Head()
 				Expect(err).NotTo(HaveOccurred())
-				h2, err := r2. Head()
+				h2, err := r2.Head()
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(h1.Name().String()).To(Equal("refs/heads/master"))

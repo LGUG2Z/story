@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/LGUG2Z/story/meta"
-	"github.com/spf13/afero"
 	"log"
 	"os"
+
+	"github.com/LGUG2Z/story/meta"
+	"github.com/spf13/afero"
 )
 
 func main() {
