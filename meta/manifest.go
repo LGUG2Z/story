@@ -136,7 +136,6 @@ func (m *Manifest) Blast() error {
 	}
 
 	for project := range m.Projects {
-		// TODO: Need to update blastradius to use afero.FS
 		calculated, err := blastradius.Calculate(m.Fs, ".", project)
 		if err != nil {
 			return err
@@ -173,6 +172,7 @@ func (m *Manifest) Blast() error {
 			m.BlastRadius[project] = true
 		}
 
+		// TODO: Update the affected package.json files
 		//UpdatePackageJSON(project, m.Projects)
 	}
 
