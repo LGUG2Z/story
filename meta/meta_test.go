@@ -578,7 +578,7 @@ var _ = Describe("Meta", func() {
 		})
 	})
 
-	Describe("Adding projects within the blast radius", func() {
+	Describe("Adding additional projects within the blast radius of a story", func() {
 		Context("With a project within the blast radius", func() {
 			It("Should add it to the story's .meta file", func() {
 				Expect(m.Load(".meta")).To(Succeed())
@@ -586,9 +586,7 @@ var _ = Describe("Meta", func() {
 				s := meta.Manifest{Fs: m.Fs}
 				Expect(s.Load(".meta")).To(Succeed())
 
-				Expect(afero.WriteFile(m.Fs, "two/package.json", []byte{}, os.FileMode(0666))).To(Succeed())
 				Expect(s.AddProjects([]string{"two"})).To(Succeed())
-				// TODO: Need to update blastradius to use afero.FS
 				Expect(s.Blast()).To(Succeed())
 
 				Expect(s.Projects).To(HaveKeyWithValue("three", "git@github.com:TestOrg/three.git"))
