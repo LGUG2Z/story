@@ -278,6 +278,10 @@ func (m *Manifest) RemoveProjects(projects []string) error {
 			fmt.Printf("removed: %s\n", project)
 		}
 
+		if _, exists := m.BlastRadius[project]; exists {
+			delete(m.BlastRadius, project)
+		}
+
 		if _, exists := m.Primaries[project]; exists {
 			delete(m.Primaries, project)
 			removed, err := removePrivateDependencies(m.Global, m, project)
