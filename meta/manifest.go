@@ -129,10 +129,18 @@ func getRepository(project string) (*git.Repository, error) {
 
 func (m *Manifest) Blast() error {
 	var blastRadius []string
+
+	packageJSONs := make(map[string]*node.PackageJSON)
 	blastMap := make(map[string]bool)
 
 	for project := range m.Projects {
 		blastMap[project] = true
+		packageJSON, err := getPackageJSON(m.Fs, project)
+		if err != nil {
+			return err
+		}
+
+		packageJSONs[project] = packageJSON
 	}
 
 	for project := range m.Projects {
@@ -145,6 +153,13 @@ func (m *Manifest) Blast() error {
 			if !blastMap[prj] {
 				blastRadius = append(blastRadius, prj)
 				blastMap[prj] = true
+
+				packageJSON, err := getPackageJSON(m.Fs, prj)
+				if err != nil {
+					return err
+				}
+
+				packageJSONs[prj] = packageJSON
 			}
 		}
 	}
@@ -172,17 +187,56 @@ func (m *Manifest) Blast() error {
 			m.BlastRadius[project] = true
 		}
 
-		// TODO: Update the affected package.json files
-		//UpdatePackageJSON(project, m.Projects)
+	}
+
+	// TODO: Test the hell out of this
+	for project := range m.Projects {
+		m.UpdatePackageJSONFiles(packageJSONs, project)
+	}
+
+	for prj, pkg := range packageJSONs {
+		bytes, err := json.MarshalIndent(pkg, "", "  ")
+		if err != nil {
+			return err
+		}
+
+		if err := afero.WriteFile(m.Fs, fmt.Sprintf("%s/package.json", prj), bytes, os.FileMode(0666)); err != nil {
+			return err
+		}
 	}
 
 	if err := m.Write(); err != nil {
 		return err
 	}
 
-	fmt.Println(strings.Join(blastRadius, ", "))
+	fmt.Printf("added projects within the blast radius of this story:\n  %s\n", strings.Join(blastRadius, "\n  "))
 
 	return nil
+}
+
+func getPackageJSON(fs afero.Fs, project string) (*node.PackageJSON, error) {
+	packageJSON := &node.PackageJSON{}
+	bytes, err := afero.ReadFile(fs, fmt.Sprintf("%s/package.json", project))
+	if err != nil {
+		return nil, err
+	}
+
+	if err := json.Unmarshal(bytes, packageJSON); err != nil {
+		return nil, err
+	}
+
+	return packageJSON, nil
+}
+
+// TODO: Test this, use
+func (m *Manifest) UpdatePackageJSONFiles(packageJSONs map[string]*node.PackageJSON, dep string) {
+	for _, pkg := range packageJSONs {
+		if _, exists := pkg.Dependencies[dep]; exists {
+			if strings.HasSuffix(pkg.Dependencies[dep], ".git") {
+				pkg.Dependencies[dep] = fmt.Sprintf("%s#%s", pkg.Dependencies[dep], m.Name)
+			}
+		}
+	}
 }
 
 // Prune removes from the story all projects where the head of the current story branch
