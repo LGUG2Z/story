@@ -143,7 +143,7 @@ story blast
 {
   "story": "new-navigation",
   "blast-radius": {
-    "library-3": "git@github.com:SomeOrg/library-1.git"
+    "library-3": "git@github.com:SomeOrg/library-3.git"
   },
   "primaries": {
     "service-1": true
@@ -151,7 +151,7 @@ story blast
   "projects": {
     "service-1": "git@github.com:SomeOrg/service-1.git",
     "library-1": "git@github.com:SomeOrg/library-1.git",
-    "library-3": "git@github.com:SomeOrg/library-1.git"
+    "library-3": "git@github.com:SomeOrg/library-3.git"
   }
 }
 ```
