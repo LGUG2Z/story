@@ -135,7 +135,7 @@ Finally, to make sure that everything within the blast radius of our story is co
 which has `library-1` as a dependency):
 
 ```bash
-beam blast
+story blast
 ```
 
 * the story is updated again with projects within the blast radius
