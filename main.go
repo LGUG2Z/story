@@ -143,6 +143,22 @@ func main() {
 				return ErrNotWorkingOnAStory
 			},
 		},
+		{
+			Name:      "complete",
+			Usage:     "revert branch references in package.json files in preparation for merge to master",
+			UsageText: "story complete",
+			Action: func(c *cli.Context) error {
+				if c.NArg() != 0 {
+					return ErrNoArgsRequired
+				}
+
+				if m.IsStory() {
+					return m.Complete()
+				}
+
+				return ErrNotWorkingOnAStory
+			},
+		},
 	}
 
 	if err := app.Run(os.Args); err != nil {
