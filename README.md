@@ -150,7 +150,8 @@ story blast
   },
   "projects": {
     "service-1": "git@github.com:SomeOrg/service-1.git",
-    "library-1": "git@github.com:SomeOrg/library-1.git"
+    "library-1": "git@github.com:SomeOrg/library-1.git",
+    "library-3": "git@github.com:SomeOrg/library-1.git"
   }
 }
 ```
