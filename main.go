@@ -71,7 +71,7 @@ func main() {
 				}
 
 				if m.IsStory() {
-					return m.RestoreGlobal()
+					return m.Reset()
 				}
 
 				return ErrNotWorkingOnAStory

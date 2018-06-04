@@ -14,28 +14,6 @@ import (
 	"gopkg.in/src-d/go-git.v4/storage/filesystem"
 )
 
-func DeleteBranch(story string, repository *git.Repository) error {
-	if os.Getenv("TEST") == "1" {
-		return nil
-	}
-
-	storyReference := plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", story))
-	workTree, err := repository.Worktree()
-	if err != nil {
-		return err
-	}
-
-	if err := workTree.Checkout(&git.CheckoutOptions{}); err != nil {
-		return err
-	}
-
-	if repository.Storer.RemoveReference(storyReference); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func CheckoutBranch(branch string, repository *git.Repository) error {
 	if os.Getenv("TEST") == "1" {
 		return nil
@@ -70,6 +48,77 @@ func CheckoutBranch(branch string, repository *git.Repository) error {
 	}
 
 	return err
+}
+
+func DeleteBranch(story string, repository *git.Repository) error {
+	if os.Getenv("TEST") == "1" {
+		return nil
+	}
+
+	storyReference := plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", story))
+	workTree, err := repository.Worktree()
+	if err != nil {
+		return err
+	}
+
+	if err := workTree.Checkout(&git.CheckoutOptions{}); err != nil {
+		return err
+	}
+
+	if repository.Storer.RemoveReference(storyReference); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func addPrivateDependencies(meta, story *Manifest, project string) ([]string, error) {
+	packageJSON := fmt.Sprintf("%s/package.json", project)
+
+	bytes, err := afero.ReadFile(story.Fs, packageJSON)
+	if err != nil {
+		return nil, err
+	}
+
+	p := node.PackageJSON{}
+	if err = json.Unmarshal(bytes, &p); err != nil {
+		return nil, err
+	}
+
+	var added []string
+
+	for dep := range p.Dependencies {
+		if _, exists := meta.Projects[dep]; exists {
+			if _, exists := story.Projects[dep]; !exists {
+				story.Projects[dep] = fmt.Sprintf("git@github.com:%s/%s.git", os.Getenv("ORGANISATION"), dep)
+				added = append(added, dep)
+
+				repository, err := getRepository(dep)
+				if err != nil {
+					return nil, err
+				}
+
+				if err := CheckoutBranch(story.Name, repository); err != nil {
+					return nil, fmt.Errorf("%s: %s", project, err)
+				}
+			}
+
+			if strings.HasSuffix(p.Dependencies[dep], ".git") {
+				p.Dependencies[dep] = fmt.Sprintf("%s#%s", p.Dependencies[dep], story.Name)
+			}
+		}
+	}
+
+	bytes, err = json.MarshalIndent(p, "", "  ")
+	if err != nil {
+		return nil, err
+	}
+
+	if err := afero.WriteFile(story.Fs, packageJSON, bytes, os.FileMode(0666)); err != nil {
+		return nil, err
+	}
+
+	return added, nil
 }
 
 func removePrivateDependencies(meta, story *Manifest, project string) ([]string, error) {
@@ -126,55 +175,6 @@ func removePrivateDependencies(meta, story *Manifest, project string) ([]string,
 	}
 
 	return removed, nil
-}
-
-func addPrivateDependencies(meta, story *Manifest, project string) ([]string, error) {
-	packageJSON := fmt.Sprintf("%s/package.json", project)
-
-	bytes, err := afero.ReadFile(story.Fs, packageJSON)
-	if err != nil {
-		return nil, err
-	}
-
-	p := node.PackageJSON{}
-	if err = json.Unmarshal(bytes, &p); err != nil {
-		return nil, err
-	}
-
-	var added []string
-
-	for dep := range p.Dependencies {
-		if _, exists := meta.Projects[dep]; exists {
-			if _, exists := story.Projects[dep]; !exists {
-				story.Projects[dep] = fmt.Sprintf("git@github.com:%s/%s.git", os.Getenv("ORGANISATION"), dep)
-				added = append(added, dep)
-
-				repository, err := getRepository(dep)
-				if err != nil {
-					return nil, err
-				}
-
-				if err := CheckoutBranch(story.Name, repository); err != nil {
-					return nil, fmt.Errorf("%s: %s", project, err)
-				}
-			}
-
-			if strings.HasSuffix(p.Dependencies[dep], ".git") {
-				p.Dependencies[dep] = fmt.Sprintf("%s#%s", p.Dependencies[dep], story.Name)
-			}
-		}
-	}
-
-	bytes, err = json.MarshalIndent(p, "", "  ")
-	if err != nil {
-		return nil, err
-	}
-
-	if err := afero.WriteFile(story.Fs, packageJSON, bytes, os.FileMode(0666)); err != nil {
-		return nil, err
-	}
-
-	return added, nil
 }
 
 func getPackageJSON(fs afero.Fs, project string) (*node.PackageJSON, error) {

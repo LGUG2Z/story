@@ -153,7 +153,7 @@ var _ = Describe("Meta", func() {
 	//				Expect(s.Load(".meta")).To(Succeed())
 	//				Expect(s.IsStory()).To(BeTrue())
 	//
-	//				Expect(s.RestoreGlobal()).To(Succeed())
+	//				Expect(s.Reset()).To(Succeed())
 	//				Expect(afero.Exists(s.Fs, ".meta.some-story")).To(BeTrue())
 	//			})
 	//
@@ -164,7 +164,7 @@ var _ = Describe("Meta", func() {
 	//				Expect(s.Load(".meta")).To(Succeed())
 	//				Expect(s.IsStory()).To(BeTrue())
 	//
-	//				Expect(s.RestoreGlobal()).To(Succeed())
+	//				Expect(s.Reset()).To(Succeed())
 	//				g := meta.Manifest{Fs: m.Fs}
 	//				Expect(s.Load(".meta")).To(Succeed())
 	//				Expect(g.IsStory()).To(BeFalse())
