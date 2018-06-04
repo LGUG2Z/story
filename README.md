@@ -24,11 +24,9 @@ And some example `package.json` files within them:
 ```json
 // service-1/package.json
 { 
-  // ...
   "dependencies": {
     "library-1": "git+ssh://git@github.com:SomeOrg/library-1.git",
     "library-2": "git+ssh://git@github.com:SomeOrg/library-2.git"
-    // ...
   }
 }
 
@@ -37,11 +35,9 @@ And some example `package.json` files within them:
 ```json
 // service-2/package.json
 { 
-  // ...
   "dependencies": {
     "library-1": "git+ssh://git@github.com:SomeOrg/library-1.git",
     "library-2": "git+ssh://git@github.com:SomeOrg/library-2.git"
-    // ...
   }
 }
 ```
@@ -49,10 +45,8 @@ And some example `package.json` files within them:
 ```json
 // library-3/package.json
 { 
-  // ...
   "dependencies": {
     "library-1": "git+ssh://git@github.com:SomeOrg/library-1.git"
-    // ...
   }
 }
 ```
@@ -91,11 +85,9 @@ Then:
 ```json
 // service-1/package.json
 { 
-  // ...
   "dependencies": {
     "library-1": "git+ssh://git@github.com:SomeOrg/library-1.git#new-navigation",
     "library-2": "git+ssh://git@github.com:SomeOrg/library-2.git#new-navigation"
-    // ...
   }
 }
 ```
@@ -130,11 +122,9 @@ story prune
 ```json
 // service-1/package.json
 { 
-  // ...
   "dependencies": {
     "library-1": "git+ssh://git@github.com:SomeOrg/library-1.git#new-navigation",
     "library-2": "git+ssh://git@github.com:SomeOrg/library-2.git"
-    // ...
   }
 }
 ```
@@ -169,10 +159,8 @@ beam blast
 ```json
 // */package.json
 { 
-  // ...
   "dependencies": {
     "library-3": "git+ssh://git@github.com:SomeOrg/library-3.git#new-navigation",
-    // ...
   }
 }
 ```
