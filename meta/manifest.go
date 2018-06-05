@@ -320,11 +320,7 @@ func (m *Manifest) Prune() error {
 		fmt.Printf("pruned unchanged projects and their dependencies:\n  %s\n", strings.Join(pruned, "\n  "))
 	}
 
-	if err := m.Write(); err != nil {
-		return err
-	}
-
-	return nil
+	return m.Write()
 }
 
 // Blast calculates the blast radius of projects within the current story and then adds those projects
