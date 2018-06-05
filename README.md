@@ -162,8 +162,16 @@ story blast
 // */package.json
 { 
   "dependencies": {
-    "library-3": "git+ssh://git@github.com:SomeOrg/library-3.git#new-navigation",
+    "library-3": "git+ssh://git@github.com:SomeOrg/library-3.git#new-navigation"
   }
 }
 ```
 
+When ready to prepare a merge to the master branch, we need to clean up references to the story
+branch in the various `package.json` files:
+
+```bash
+story complete
+```
+
+* all `package.json` files will have the the `#new-navigation` suffix removed from their dependencies
