@@ -25,7 +25,7 @@ var m meta.Manifest
 func createMetaRepo(globalMeta []byte) error {
 	r, err := git.PlainInit("test", false)
 	if err := ioutil.WriteFile("test/.meta", globalMeta, os.FileMode(0666)); err != nil {
-		return  err
+		return err
 	}
 
 	if err := ioutil.WriteFile("test/.gitignore", []byte("one\ntwo"), os.FileMode(0666)); err != nil {
@@ -656,6 +656,30 @@ var _ = Describe("Meta", func() {
 
 				Expect(branch).NotTo(BeNil())
 			})
+		})
+	})
+
+	Describe("Completing a story", func() {
+		It("Should remove all references to the story branch in all package.json files", func() {
+			Expect(m.Load(".meta")).To(Succeed())
+			Expect(m.SetStory("some-story")).To(Succeed())
+			s := meta.Manifest{Fs: m.Fs}
+			Expect(s.Load(".meta")).To(Succeed())
+			Expect(s.AddProjects([]string{"one", "two", "three"})).To(Succeed())
+			
+			Expect(s.Complete()).To(Succeed())
+
+			for project, _ := range s.Projects {
+				bytes, err := afero.ReadFile(m.Fs, fmt.Sprintf("%s/package.json", project))
+				Expect(err).NotTo(HaveOccurred())
+				p := &node.PackageJSON{}
+
+				Expect(json.Unmarshal(bytes, p)).To(Succeed())
+
+				for _, repo := range p.Dependencies {
+					Expect(repo).NotTo(HaveSuffix("#some-story"))
+				}
+			}
 		})
 	})
 })
