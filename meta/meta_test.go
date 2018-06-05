@@ -126,6 +126,101 @@ var _ = Describe("Meta", func() {
 		})
 	})
 
+	Describe("Setting a story", func() {
+		Context("With an existing story on a checked out branch", func() {
+			It("Should check out the branches for each project in the story", func() {
+				Expect(os.Unsetenv("TEST")).To(Succeed())
+				Expect(os.RemoveAll("test")).To(Succeed())
+
+				// GIVEN a meta repo
+				r, err := git.PlainInit("test", false)
+				Expect(ioutil.WriteFile("test/.meta", globalMeta, os.FileMode(0666))).To(Succeed())
+				Expect(ioutil.WriteFile("test/.gitignore", []byte("one\ntwo"), os.FileMode(0666))).To(Succeed())
+
+				wt, err := r.Worktree()
+				Expect(err).NotTo(HaveOccurred())
+				_, err = wt.Add(".meta")
+				Expect(err).NotTo(HaveOccurred())
+				_, err = wt.Add(".gitignore")
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = wt.Commit("initial commit", &git.CommitOptions{
+					Author: &object.Signature{Name: "John Doe", Email: "john@doe.org", When: time.Now()},
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(os.Chdir("test")).To(Succeed())
+				m.Fs = afero.NewOsFs()
+
+				// AND one repo within the meta repo
+				r1, err := git.PlainInit("one", false)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(ioutil.WriteFile("one/package.json", one, os.FileMode(0666))).To(Succeed())
+
+				wt1, err := r1.Worktree()
+				Expect(err).NotTo(HaveOccurred())
+				_, err = wt1.Add("package.json")
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = wt1.Commit("package.json commit", &git.CommitOptions{
+					Author: &object.Signature{Name: "John Doe", Email: "john@doe.org", When: time.Now()},
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				// AND a story set
+				Expect(m.Load(".meta")).To(Succeed())
+				Expect(m.SetStory("some-story")).To(Succeed())
+
+				// WITH project one added to the story and updated
+				s := meta.Manifest{Fs: m.Fs}
+				Expect(s.Load(".meta")).To(Succeed())
+				Expect(s.AddProjects([]string{"one"})).To(Succeed())
+
+				r, err = git.PlainOpen(".")
+				Expect(err).NotTo(HaveOccurred())
+
+				wt, err = r.Worktree()
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = wt.Add(".meta")
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = wt.Add(".meta.json")
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = wt.Commit("story commit", &git.CommitOptions{
+					Author: &object.Signature{Name: "John Doe", Email: "john@doe.org", When: time.Now()},
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				// AND then being reset back to the master branch
+				Expect(s.Reset()).To(Succeed())
+
+				// WHEN I run set story again
+				s = meta.Manifest{Fs: m.Fs}
+				Expect(s.SetStory("some-story")).To(Succeed())
+
+				// THEN the meta repo and project one should be on the some-story branch
+				r, err = git.PlainOpen(".")
+				Expect(err).NotTo(HaveOccurred())
+				h, err := r.Head()
+				Expect(err).NotTo(HaveOccurred())
+				r1, err = git.PlainOpen("one")
+				Expect(err).NotTo(HaveOccurred())
+				h1, err := r1.Head()
+				Expect(err).NotTo(HaveOccurred())
+
+
+				Expect(h.Name().String()).To(Equal("refs/heads/some-story"))
+				Expect(h1.Name().String()).To(Equal("refs/heads/some-story"))
+
+				Expect(os.Chdir("..")).To(Succeed())
+				Expect(os.RemoveAll("test")).To(Succeed())
+			})
+		})
+	})
+
 	//Describe("Setting and resetting stories", func() {
 	//	Context("With no story currently set", func() {
 	//		Context("With a local story .meta for the requested story", func() {

@@ -70,6 +70,7 @@ func (m *Manifest) SetStory(story string) error {
 
 	_, err = m.Fs.Stat(".meta.json")
 	if err != nil {
+		// Create story
 		if err := m.Fs.Rename(".meta", ".meta.json"); err != nil {
 			return err
 		}
@@ -87,6 +88,7 @@ func (m *Manifest) SetStory(story string) error {
 		return afero.WriteFile(m.Fs, ".meta", bytes, os.FileMode(0666))
 	}
 
+	// Load existing story
 	m = &Manifest{Fs: m.Fs}
 	if err := m.Load(".meta"); err != nil {
 		return err
