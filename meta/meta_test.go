@@ -605,6 +605,8 @@ var _ = Describe("Meta", func() {
 				// THEN I should not see that branch referenced in the repo anymore
 				var branch *plumbing.Reference
 				branches, err := repository.Branches()
+				Expect(err).NotTo(HaveOccurred())
+
 				branches.ForEach(func(r *plumbing.Reference) error {
 					if r.Name().String() == "refs/heads/test-story" {
 						branch = r
@@ -643,6 +645,7 @@ var _ = Describe("Meta", func() {
 				// when I run CheckoutBranch
 				Expect(meta.CheckoutBranch("test-story", repository)).To(Succeed())
 				branches, err := repository.Branches()
+				Expect(err).NotTo(HaveOccurred())
 
 				var branch *plumbing.Reference
 
