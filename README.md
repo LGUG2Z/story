@@ -144,7 +144,7 @@ story blast
 {
   "story": "new-navigation",
   "blast-radius": {
-    "library-3": "git@github.com:SomeOrg/library-3.git"
+    "library-3": true
   },
   "primaries": {
     "service-1": true
