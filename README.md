@@ -1,3 +1,4 @@
+[![Go Report Card](https://goreportcard.com/badge/github.com/lgug2z/story)](https://goreportcard.com/report/github.com/lgug2z/story)
 # story
 `story` is workflow tool for implementing stories across multiple `node` projects in a meta-repo
 powered by [meta](https://github.com/mateodelnorte/meta).
