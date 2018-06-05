@@ -17,9 +17,103 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"gopkg.in/src-d/go-git.v4/storage/memory"
+	"strings"
 )
 
 var m meta.Manifest
+
+func createMetaRepo(globalMeta []byte) error {
+	r, err := git.PlainInit("test", false)
+	if err := ioutil.WriteFile("test/.meta", globalMeta, os.FileMode(0666)); err != nil {
+		return  err
+	}
+
+	if err := ioutil.WriteFile("test/.gitignore", []byte("one\ntwo"), os.FileMode(0666)); err != nil {
+		return err
+	}
+
+	wt, err := r.Worktree()
+	if err != nil {
+		return err
+	}
+
+	_, err = wt.Add(".meta")
+	if err != nil {
+		return err
+	}
+
+	_, err = wt.Add(".gitignore")
+	if err != nil {
+		return err
+	}
+
+	_, err = wt.Commit("initial commit", &git.CommitOptions{
+		Author: &object.Signature{Name: "John Doe", Email: "john@doe.org", When: time.Now()},
+	})
+
+	return err
+}
+
+func addProjectToMetaRepo(project string, packageJSON []byte) error {
+	repo, err := git.PlainInit(project, false)
+	if err != nil {
+		return err
+	}
+
+	if err := ioutil.WriteFile(fmt.Sprintf("%s/package.json", project), packageJSON, os.FileMode(0666)); err != nil {
+		return err
+	}
+
+	wt, err := repo.Worktree()
+	if err != nil {
+		return err
+	}
+
+	_, err = wt.Add("package.json")
+	if err != nil {
+		return err
+	}
+
+	_, err = wt.Commit("package.json commit", &git.CommitOptions{
+		Author: &object.Signature{Name: "John Doe", Email: "john@doe.org", When: time.Now()},
+	})
+
+	return err
+}
+
+func commitFilesToProjectRepo(relativeProjectPath string, files []string) error {
+	repo, err := git.PlainOpen(relativeProjectPath)
+	Expect(err).NotTo(HaveOccurred())
+
+	wt, err := repo.Worktree()
+	Expect(err).NotTo(HaveOccurred())
+
+	for _, file := range files {
+		_, err = wt.Add(file)
+		if err != nil {
+			return err
+		}
+	}
+
+	_, err = wt.Commit(fmt.Sprintf("updated: %s", strings.Join(files, ", ")), &git.CommitOptions{
+		Author: &object.Signature{Name: "John Doe", Email: "john@doe.org", When: time.Now()},
+	})
+
+	return err
+}
+
+func getCurrentBranchForProjectRepo(relativeProjectPath string) (string, error) {
+	repo, err := git.PlainOpen(relativeProjectPath)
+	if err != nil {
+		return "", err
+	}
+	head, err := repo.Head()
+	if err != nil {
+		return "", nil
+	}
+
+	return head.Name().String(), nil
+}
 
 func packageJSONWithDependencies(dependencies []string) []byte {
 	pkg := node.PackageJSON{
@@ -133,40 +227,12 @@ var _ = Describe("Meta", func() {
 				Expect(os.RemoveAll("test")).To(Succeed())
 
 				// GIVEN a meta repo
-				r, err := git.PlainInit("test", false)
-				Expect(ioutil.WriteFile("test/.meta", globalMeta, os.FileMode(0666))).To(Succeed())
-				Expect(ioutil.WriteFile("test/.gitignore", []byte("one\ntwo"), os.FileMode(0666))).To(Succeed())
-
-				wt, err := r.Worktree()
-				Expect(err).NotTo(HaveOccurred())
-				_, err = wt.Add(".meta")
-				Expect(err).NotTo(HaveOccurred())
-				_, err = wt.Add(".gitignore")
-				Expect(err).NotTo(HaveOccurred())
-
-				_, err = wt.Commit("initial commit", &git.CommitOptions{
-					Author: &object.Signature{Name: "John Doe", Email: "john@doe.org", When: time.Now()},
-				})
-				Expect(err).NotTo(HaveOccurred())
-
+				Expect(createMetaRepo(globalMeta)).To(Succeed())
 				Expect(os.Chdir("test")).To(Succeed())
 				m.Fs = afero.NewOsFs()
 
 				// AND one repo within the meta repo
-				r1, err := git.PlainInit("one", false)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(ioutil.WriteFile("one/package.json", one, os.FileMode(0666))).To(Succeed())
-
-				wt1, err := r1.Worktree()
-				Expect(err).NotTo(HaveOccurred())
-				_, err = wt1.Add("package.json")
-				Expect(err).NotTo(HaveOccurred())
-
-				_, err = wt1.Commit("package.json commit", &git.CommitOptions{
-					Author: &object.Signature{Name: "John Doe", Email: "john@doe.org", When: time.Now()},
-				})
-				Expect(err).NotTo(HaveOccurred())
+				Expect(addProjectToMetaRepo("one", one)).To(Succeed())
 
 				// AND a story set
 				Expect(m.Load(".meta")).To(Succeed())
@@ -176,23 +242,7 @@ var _ = Describe("Meta", func() {
 				s := meta.Manifest{Fs: m.Fs}
 				Expect(s.Load(".meta")).To(Succeed())
 				Expect(s.AddProjects([]string{"one"})).To(Succeed())
-
-				r, err = git.PlainOpen(".")
-				Expect(err).NotTo(HaveOccurred())
-
-				wt, err = r.Worktree()
-				Expect(err).NotTo(HaveOccurred())
-
-				_, err = wt.Add(".meta")
-				Expect(err).NotTo(HaveOccurred())
-
-				_, err = wt.Add(".meta.json")
-				Expect(err).NotTo(HaveOccurred())
-
-				_, err = wt.Commit("story commit", &git.CommitOptions{
-					Author: &object.Signature{Name: "John Doe", Email: "john@doe.org", When: time.Now()},
-				})
-				Expect(err).NotTo(HaveOccurred())
+				Expect(commitFilesToProjectRepo(".", []string{".meta", ".meta.json"})).To(Succeed())
 
 				// AND then being reset back to the master branch
 				Expect(s.Reset()).To(Succeed())
@@ -202,18 +252,14 @@ var _ = Describe("Meta", func() {
 				Expect(s.SetStory("some-story")).To(Succeed())
 
 				// THEN the meta repo and project one should be on the some-story branch
-				r, err = git.PlainOpen(".")
-				Expect(err).NotTo(HaveOccurred())
-				h, err := r.Head()
-				Expect(err).NotTo(HaveOccurred())
-				r1, err = git.PlainOpen("one")
-				Expect(err).NotTo(HaveOccurred())
-				h1, err := r1.Head()
+				metaRepoBranch, err := getCurrentBranchForProjectRepo(".")
 				Expect(err).NotTo(HaveOccurred())
 
+				projectOneBranch, err := getCurrentBranchForProjectRepo("one")
+				Expect(err).NotTo(HaveOccurred())
 
-				Expect(h.Name().String()).To(Equal("refs/heads/some-story"))
-				Expect(h1.Name().String()).To(Equal("refs/heads/some-story"))
+				Expect(metaRepoBranch).To(Equal("refs/heads/some-story"))
+				Expect(projectOneBranch).To(Equal("refs/heads/some-story"))
 
 				Expect(os.Chdir("..")).To(Succeed())
 				Expect(os.RemoveAll("test")).To(Succeed())
