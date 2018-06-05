@@ -267,53 +267,6 @@ var _ = Describe("Meta", func() {
 		})
 	})
 
-	//Describe("Setting and resetting stories", func() {
-	//	Context("With no story currently set", func() {
-	//		Context("With a local story .meta for the requested story", func() {
-	//			It("Should set the story using the existing story meta", func() {
-	//				story := storyMetaWithProjects("test-story", []string{"one", "two"})
-	//				afero.WriteFile(m.Fs, ".meta.test-story", story, os.FileMode(0666))
-	//
-	//				Expect(m.Load(".meta")).To(Succeed())
-	//				Expect(m.SetStory("test-story")).To(Succeed())
-	//
-	//				s := meta.Manifest{Fs: m.Fs}
-	//				Expect(s.Load(".meta")).To(Succeed())
-	//				Expect(s.Projects).To(HaveKeyWithValue("one", "git@github.com:TestOrg/one.git"))
-	//				Expect(s.Projects).To(HaveKeyWithValue("two", "git@github.com:TestOrg/two.git"))
-	//			})
-	//		})
-	//	})
-	//
-	//	Context("With a story currently set", func() {
-	//		Context("Resetting to the global meta", func() {
-	//			It("Should move the current story to a backup file", func() {
-	//				Expect(m.Load(".meta")).To(Succeed())
-	//				Expect(m.SetStory("some-story")).To(Succeed())
-	//				s := meta.Manifest{Fs: m.Fs}
-	//				Expect(s.Load(".meta")).To(Succeed())
-	//				Expect(s.IsStory()).To(BeTrue())
-	//
-	//				Expect(s.Reset()).To(Succeed())
-	//				Expect(afero.Exists(s.Fs, ".meta.some-story")).To(BeTrue())
-	//			})
-	//
-	//			It("Should set the meta file as the global meta", func() {
-	//				Expect(m.Load(".meta")).To(Succeed())
-	//				Expect(m.SetStory("some-story")).To(Succeed())
-	//				s := meta.Manifest{Fs: m.Fs}
-	//				Expect(s.Load(".meta")).To(Succeed())
-	//				Expect(s.IsStory()).To(BeTrue())
-	//
-	//				Expect(s.Reset()).To(Succeed())
-	//				g := meta.Manifest{Fs: m.Fs}
-	//				Expect(s.Load(".meta")).To(Succeed())
-	//				Expect(g.IsStory()).To(BeFalse())
-	//			})
-	//		})
-	//	})
-	//})
-
 	Describe("Adding projects", func() {
 		Context("With no story currently set", func() {
 			It("Should return an error", func() {
@@ -517,65 +470,13 @@ var _ = Describe("Meta", func() {
 				Expect(os.RemoveAll("test")).To(Succeed())
 
 				// GIVEN a meta repo
-				r, err := git.PlainInit("test", false)
-				Expect(ioutil.WriteFile("test/.meta", globalMeta, os.FileMode(0666))).To(Succeed())
-				Expect(ioutil.WriteFile("test/.gitignore", []byte("one\ntwo"), os.FileMode(0666))).To(Succeed())
-
-				wt, err := r.Worktree()
-				Expect(err).NotTo(HaveOccurred())
-				_, err = wt.Add(".meta")
-				Expect(err).NotTo(HaveOccurred())
-				_, err = wt.Add(".gitignore")
-				Expect(err).NotTo(HaveOccurred())
-
-				_, err = wt.Commit("initial commit", &git.CommitOptions{
-					Author: &object.Signature{
-						Name:  "John Doe",
-						Email: "john@doe.org",
-						When:  time.Now(),
-					},
-				})
-				Expect(err).NotTo(HaveOccurred())
-
+				Expect(createMetaRepo(globalMeta)).To(Succeed())
 				Expect(os.Chdir("test")).To(Succeed())
 				m.Fs = afero.NewOsFs()
 
 				// AND two repos within the meta repo
-				r1, err := git.PlainInit("one", false)
-				Expect(err).NotTo(HaveOccurred())
-				r2, err := git.PlainInit("two", false)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(ioutil.WriteFile("one/package.json", one, os.FileMode(0666))).To(Succeed())
-				Expect(ioutil.WriteFile("two/package.json", two, os.FileMode(0666))).To(Succeed())
-
-				wt1, err := r1.Worktree()
-				Expect(err).NotTo(HaveOccurred())
-				_, err = wt1.Add("package.json")
-				Expect(err).NotTo(HaveOccurred())
-
-				_, err = wt1.Commit("package.json commit", &git.CommitOptions{
-					Author: &object.Signature{
-						Name:  "John Doe",
-						Email: "john@doe.org",
-						When:  time.Now(),
-					},
-				})
-				Expect(err).NotTo(HaveOccurred())
-
-				wt2, err := r2.Worktree()
-				Expect(err).NotTo(HaveOccurred())
-				_, err = wt2.Add("package.json")
-				Expect(err).NotTo(HaveOccurred())
-
-				_, err = wt2.Commit("package.json commit", &git.CommitOptions{
-					Author: &object.Signature{
-						Name:  "John Doe",
-						Email: "john@doe.org",
-						When:  time.Now(),
-					},
-				})
-				Expect(err).NotTo(HaveOccurred())
+				Expect(addProjectToMetaRepo("one", one)).To(Succeed())
+				Expect(addProjectToMetaRepo("two", two)).To(Succeed())
 
 				// AND a story set
 				Expect(m.Load(".meta")).To(Succeed())
@@ -585,18 +486,7 @@ var _ = Describe("Meta", func() {
 				s := meta.Manifest{Fs: m.Fs}
 				Expect(s.Load(".meta")).To(Succeed())
 				Expect(s.AddProjects([]string{"two"})).To(Succeed())
-
-				_, err = wt2.Add("package.json")
-				Expect(err).NotTo(HaveOccurred())
-
-				_, err = wt2.Commit("package.json story commit", &git.CommitOptions{
-					Author: &object.Signature{
-						Name:  "John Doe",
-						Email: "john@doe.org",
-						When:  time.Now(),
-					},
-				})
-				Expect(err).NotTo(HaveOccurred())
+				Expect(commitFilesToProjectRepo("two", []string{"package.json"})).To(Succeed())
 
 				// WHEN I run the pruner
 				Expect(s.Prune()).To(Succeed())
@@ -626,67 +516,15 @@ var _ = Describe("Meta", func() {
 				Expect(os.RemoveAll("test")).To(Succeed())
 
 				// GIVEN a meta repo
-				r, err := git.PlainInit("test", false)
-				Expect(ioutil.WriteFile("test/.meta", globalMeta, os.FileMode(0666))).To(Succeed())
-				Expect(ioutil.WriteFile("test/.gitignore", []byte("one\ntwo"), os.FileMode(0666))).To(Succeed())
-
-				wt, err := r.Worktree()
-				Expect(err).NotTo(HaveOccurred())
-				_, err = wt.Add(".meta")
-				Expect(err).NotTo(HaveOccurred())
-				_, err = wt.Add(".gitignore")
-				Expect(err).NotTo(HaveOccurred())
-
-				_, err = wt.Commit("initial commit", &git.CommitOptions{
-					Author: &object.Signature{
-						Name:  "John Doe",
-						Email: "john@doe.org",
-						When:  time.Now(),
-					},
-				})
-				Expect(err).NotTo(HaveOccurred())
-
+				Expect(createMetaRepo(globalMeta)).To(Succeed())
 				Expect(os.Chdir("test")).To(Succeed())
 				m.Fs = afero.NewOsFs()
 
-				// AND a story set
-				r1, err := git.PlainInit("one", false)
-				Expect(err).NotTo(HaveOccurred())
-				r2, err := git.PlainInit("two", false)
-				Expect(err).NotTo(HaveOccurred())
+				// AND two projects within the meta repo
+				Expect(addProjectToMetaRepo("one", one)).To(Succeed())
+				Expect(addProjectToMetaRepo("two", two)).To(Succeed())
 
-				Expect(ioutil.WriteFile("one/package.json", one, os.FileMode(0666))).To(Succeed())
-				Expect(ioutil.WriteFile("two/package.json", two, os.FileMode(0666))).To(Succeed())
-
-				wt1, err := r1.Worktree()
-				Expect(err).NotTo(HaveOccurred())
-				_, err = wt1.Add("package.json")
-				Expect(err).NotTo(HaveOccurred())
-
-				_, err = wt1.Commit("package.json commit", &git.CommitOptions{
-					Author: &object.Signature{
-						Name:  "John Doe",
-						Email: "john@doe.org",
-						When:  time.Now(),
-					},
-				})
-				Expect(err).NotTo(HaveOccurred())
-
-				wt2, err := r2.Worktree()
-				Expect(err).NotTo(HaveOccurred())
-				_, err = wt2.Add("package.json")
-				Expect(err).NotTo(HaveOccurred())
-
-				_, err = wt2.Commit("package.json commit", &git.CommitOptions{
-					Author: &object.Signature{
-						Name:  "John Doe",
-						Email: "john@doe.org",
-						When:  time.Now(),
-					},
-				})
-				Expect(err).NotTo(HaveOccurred())
-
-				// AND a new story and add project two
+				// AND a new story with project two added
 				Expect(m.Load(".meta")).To(Succeed())
 				Expect(m.SetStory("some-story")).To(Succeed())
 				s := meta.Manifest{Fs: m.Fs}
@@ -704,13 +542,13 @@ var _ = Describe("Meta", func() {
 				Expect(s.Projects).NotTo(HaveKey("two"))
 
 				// AND both projects are on the master branch
-				h1, err := r1.Head()
+				projectOneBranch, err := getCurrentBranchForProjectRepo("one")
 				Expect(err).NotTo(HaveOccurred())
-				h2, err := r2.Head()
+				projectTwoBranch, err := getCurrentBranchForProjectRepo("two")
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(h1.Name().String()).To(Equal("refs/heads/master"))
-				Expect(h2.Name().String()).To(Equal("refs/heads/master"))
+				Expect(projectOneBranch).To(Equal("refs/heads/master"))
+				Expect(projectTwoBranch).To(Equal("refs/heads/master"))
 
 				// Cleanup
 				Expect(os.Chdir("..")).To(Succeed())
