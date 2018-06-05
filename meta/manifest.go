@@ -17,6 +17,7 @@ type Manifest struct {
 	Fs          afero.Fs          `json:"-"`
 	Global      *Manifest         `json:"-"`
 	Name        string            `json:"story,omitempty"`
+	Deployables map[string]bool   `json:"deployables,omitempty"`
 	Primaries   map[string]bool   `json:"primaries,omitempty"`
 	Projects    map[string]string `json:"projects,omitempty"`
 	BlastRadius map[string]bool   `json:"blast-radius,omitempty"`
@@ -53,6 +54,11 @@ func (m *Manifest) Write() error {
 func (m *Manifest) SetStory(story string) error {
 	repository, err := getRepository(".")
 	if err != nil {
+		return err
+	}
+
+	m.Global = &Manifest{Fs: m.Fs}
+	if err := m.Global.Load(".meta"); err != nil {
 		return err
 	}
 
@@ -156,6 +162,11 @@ func (m *Manifest) AddProjects(projects []string) error {
 				m.Primaries[project] = true
 			}
 
+			// TODO: add test case
+			if _, exists := m.Deployables[project]; exists {
+				m.Deployables[project] = true
+			}
+
 			if _, exists := m.Projects[project]; !exists {
 				m.Projects[project] = fmt.Sprintf("git@github.com:%s/%s.git", os.Getenv("ORGANISATION"), project)
 
@@ -222,6 +233,11 @@ func (m *Manifest) RemoveProjects(projects []string) error {
 			removed, err := removePrivateDependencies(m.Global, m, project)
 			if err != nil {
 				return err
+			}
+
+			// TODO: add test case
+			if _, exists := m.Deployables[project]; exists {
+				m.Deployables[project] = false
 			}
 
 			fmt.Printf("removed as dependencies of %s:\n  %s\n", project, strings.Join(removed, "\n  "))
@@ -402,6 +418,14 @@ func (m *Manifest) Blast() error {
 			return err
 		}
 	}
+
+	// TODO: add test case
+	for deployable, _ := range m.Deployables {
+		if _, exists := m.BlastRadius[deployable]; exists {
+			m.Deployables[deployable] = true
+		}
+	}
+
 
 	if err := m.Write(); err != nil {
 		return err
