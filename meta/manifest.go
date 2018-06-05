@@ -35,11 +35,7 @@ func (m *Manifest) Load(filename string) error {
 		return err
 	}
 
-	if err := json.Unmarshal(bytes, &m); err != nil {
-		return err
-	}
-
-	return nil
+	return json.Unmarshal(bytes, &m)
 }
 
 // Write takes the current Manifest struct and writes it to disk
@@ -49,11 +45,7 @@ func (m *Manifest) Write() error {
 		return err
 	}
 
-	if err := afero.WriteFile(m.Fs, ".meta", bytes, os.FileMode(0666)); err != nil {
-		return err
-	}
-
-	return nil
+	return afero.WriteFile(m.Fs, ".meta", bytes, os.FileMode(0666))
 }
 
 // SetStory moves the current global meta file to a backup file and initialises
@@ -64,7 +56,7 @@ func (m *Manifest) SetStory(story string) error {
 		return err
 	}
 
-	if err := CheckoutBranch(story, repository); err != nil {
+	if err = CheckoutBranch(story, repository); err != nil {
 		return fmt.Errorf("%s: %s", "meta-repo", err)
 	}
 
@@ -270,8 +262,8 @@ func (m *Manifest) RemoveProjects(projects []string) error {
 	return err
 }
 
-// TODO: Test this, use
-func (m *Manifest) UpdatePackageJSONFiles(packageJSONs map[string]*node.PackageJSON, dep string) {
+// TODO: Make a PackageJSON type with functions on it for this kind of stuff
+func (m *Manifest) updatePackageJSONFiles(packageJSONs map[string]*node.PackageJSON, dep string) {
 	for _, pkg := range packageJSONs {
 		if _, exists := pkg.Dependencies[dep]; exists {
 			if strings.HasSuffix(pkg.Dependencies[dep], ".git") {
@@ -335,6 +327,9 @@ func (m *Manifest) Prune() error {
 	return nil
 }
 
+// Blast calculates the blast radius of projects within the current story and then adds those projects
+// to the story, checking out the appropriate branches and updating the appropriate package.json files
+// in the process
 func (m *Manifest) Blast() error {
 	var blastRadius []string
 
@@ -397,9 +392,8 @@ func (m *Manifest) Blast() error {
 
 	}
 
-	// TODO: Test the hell out of this
 	for project := range m.Projects {
-		m.UpdatePackageJSONFiles(packageJSONs, project)
+		m.updatePackageJSONFiles(packageJSONs, project)
 	}
 
 	for prj, pkg := range packageJSONs {
@@ -422,6 +416,8 @@ func (m *Manifest) Blast() error {
 	return nil
 }
 
+// Complete prepares a story for merging into a master branch by reverting all references to the story branch in all
+// package.json files
 func (m *Manifest) Complete() error {
 	modified := make(map[string]*node.PackageJSON)
 

@@ -14,6 +14,7 @@ import (
 	"gopkg.in/src-d/go-git.v4/storage/filesystem"
 )
 
+// CheckoutBranch is a helper to check out either an existing or a new branch in a git repository
 func CheckoutBranch(branch string, repository *git.Repository) error {
 	if os.Getenv("TEST") == "1" {
 		return nil
@@ -28,8 +29,7 @@ func CheckoutBranch(branch string, repository *git.Repository) error {
 	ref := plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", branch))
 
 	if branch == "master" {
-		err := workTree.Checkout(&git.CheckoutOptions{})
-		return err
+		return workTree.Checkout(&git.CheckoutOptions{})
 	}
 
 	err = workTree.Checkout(&git.CheckoutOptions{
@@ -50,6 +50,7 @@ func CheckoutBranch(branch string, repository *git.Repository) error {
 	return err
 }
 
+// DeleteBranch is a helper for deleting local branches in a git repository
 func DeleteBranch(story string, repository *git.Repository) error {
 	if os.Getenv("TEST") == "1" {
 		return nil
@@ -61,7 +62,7 @@ func DeleteBranch(story string, repository *git.Repository) error {
 		return err
 	}
 
-	if err := workTree.Checkout(&git.CheckoutOptions{}); err != nil {
+	if err = workTree.Checkout(&git.CheckoutOptions{}); err != nil {
 		return err
 	}
 
