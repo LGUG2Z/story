@@ -13,11 +13,11 @@ import (
 )
 
 var (
-	ErrAlreadyWorkingOnAStory = fmt.Errorf("already working on a story")
-	ErrNotWorkingOnAStory     = fmt.Errorf("not working on a story")
-	ErrNoArgsRequired         = fmt.Errorf("this command doesn't take any arguments")
-	ErrSingleArgRequired      = fmt.Errorf("this command takes a single argument")
-	ErrAtLeastOneArgRequired  = fmt.Errorf("this command takes at least one argument")
+	errAlreadyWorkingOnAStory = fmt.Errorf("already working on a story")
+	errNotWorkingOnAStory     = fmt.Errorf("not working on a story")
+	errNoArgsRequired         = fmt.Errorf("this command doesn't take any arguments")
+	errSingleArgRequired      = fmt.Errorf("this command takes a single argument")
+	errAtLeastOneArgRequired  = fmt.Errorf("this command takes at least one argument")
 )
 
 func main() {
@@ -51,11 +51,11 @@ func main() {
 			UsageText: "story set new-navigation",
 			Action: func(c *cli.Context) error {
 				if c.NArg() != 1 {
-					return ErrSingleArgRequired
+					return errSingleArgRequired
 				}
 
 				if m.IsStory() {
-					return ErrAlreadyWorkingOnAStory
+					return errAlreadyWorkingOnAStory
 				}
 
 				return m.SetStory(c.Args().First())
@@ -67,14 +67,14 @@ func main() {
 			UsageText: "story reset",
 			Action: func(c *cli.Context) error {
 				if c.NArg() != 0 {
-					return ErrNoArgsRequired
+					return errNoArgsRequired
 				}
 
 				if m.IsStory() {
 					return m.Reset()
 				}
 
-				return ErrNotWorkingOnAStory
+				return errNotWorkingOnAStory
 			},
 		},
 		{
@@ -84,14 +84,14 @@ func main() {
 			UsageText: "story add vacancies-service",
 			Action: func(c *cli.Context) error {
 				if c.NArg() < 1 {
-					return ErrAtLeastOneArgRequired
+					return errAtLeastOneArgRequired
 				}
 
 				if m.IsStory() {
 					return m.AddProjects(c.Args())
 				}
 
-				return ErrNotWorkingOnAStory
+				return errNotWorkingOnAStory
 			},
 		},
 		{
@@ -101,14 +101,14 @@ func main() {
 			UsageText: "story remove vacancies-service",
 			Action: func(c *cli.Context) error {
 				if c.NArg() < 1 {
-					return ErrAtLeastOneArgRequired
+					return errAtLeastOneArgRequired
 				}
 
 				if m.IsStory() {
 					return m.RemoveProjects(c.Args())
 				}
 
-				return ErrNotWorkingOnAStory
+				return errNotWorkingOnAStory
 			},
 		},
 		{
@@ -117,14 +117,14 @@ func main() {
 			UsageText: "story prune",
 			Action: func(c *cli.Context) error {
 				if c.NArg() != 0 {
-					return ErrNoArgsRequired
+					return errNoArgsRequired
 				}
 
 				if m.IsStory() {
 					return m.Prune()
 				}
 
-				return ErrNotWorkingOnAStory
+				return errNotWorkingOnAStory
 			},
 		},
 		{
@@ -133,14 +133,14 @@ func main() {
 			UsageText: "story blast",
 			Action: func(c *cli.Context) error {
 				if c.NArg() != 0 {
-					return ErrNoArgsRequired
+					return errNoArgsRequired
 				}
 
 				if m.IsStory() {
 					return m.Blast()
 				}
 
-				return ErrNotWorkingOnAStory
+				return errNotWorkingOnAStory
 			},
 		},
 		{
@@ -149,14 +149,14 @@ func main() {
 			UsageText: "story complete",
 			Action: func(c *cli.Context) error {
 				if c.NArg() != 0 {
-					return ErrNoArgsRequired
+					return errNoArgsRequired
 				}
 
 				if m.IsStory() {
 					return m.Complete()
 				}
 
-				return ErrNotWorkingOnAStory
+				return errNotWorkingOnAStory
 			},
 		},
 	}
