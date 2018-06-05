@@ -666,10 +666,10 @@ var _ = Describe("Meta", func() {
 			s := meta.Manifest{Fs: m.Fs}
 			Expect(s.Load(".meta")).To(Succeed())
 			Expect(s.AddProjects([]string{"one", "two", "three"})).To(Succeed())
-			
+
 			Expect(s.Complete()).To(Succeed())
 
-			for project, _ := range s.Projects {
+			for project := range s.Projects {
 				bytes, err := afero.ReadFile(m.Fs, fmt.Sprintf("%s/package.json", project))
 				Expect(err).NotTo(HaveOccurred())
 				p := &node.PackageJSON{}
