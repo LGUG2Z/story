@@ -16,8 +16,12 @@ type CheckoutBranchOpts struct {
 
 func CheckoutBranchWithCreateIfRequired(branch string) (string, error) {
 	output, err := CheckoutBranch(CheckoutBranchOpts{Branch: branch})
-	if err != nil && err.Error() == fmt.Sprintf("error: pathspec '%s' did not match any file(s) known to git.", branch) || err == nil {
+	if err == nil {
 		return output, nil
+	}
+
+	if err != nil && err.Error() == fmt.Sprintf("error: pathspec '%s' did not match any file(s) known to git.", branch) {
+		err = nil
 	}
 
 	if err != nil {
@@ -29,7 +33,7 @@ func CheckoutBranchWithCreateIfRequired(branch string) (string, error) {
 		return "", err
 	}
 
-	return string(output), nil
+	return output, nil
 }
 
 func CheckoutBranch(opts CheckoutBranchOpts) (string, error) {
@@ -120,5 +124,5 @@ func GetCurrentBranch(fs afero.Fs, project string) (string, error) {
 		return "", err
 	}
 
-	return strings.TrimPrefix(string(b), "ref: refs/heads/"), nil
+	return strings.TrimSpace(strings.TrimPrefix(string(b), "ref: refs/heads/")), nil
 }
