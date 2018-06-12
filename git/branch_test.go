@@ -181,6 +181,42 @@ var _ = Describe("Branch", func() {
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("open .git/refs/heads/test-branch: no such file or directory"))
 		})
+
+		It("Should delete a remote branch", func() {
+			// Given a repository, with a remote "origin"
+			Expect(fs.MkdirAll("remote", os.FileMode(0700))).To(Succeed())
+			command := exec.Command("git", "init", "--bare")
+			command.Dir = "remote"
+			_, err := command.CombinedOutput()
+			Expect(err).NotTo(HaveOccurred())
+
+			command = exec.Command("git", "remote", "add", "origin", "./remote")
+			_, err = command.CombinedOutput()
+			Expect(err).NotTo(HaveOccurred())
+
+			command = exec.Command("git", "push", "--set-upstream", "origin", "master")
+			_, err = command.CombinedOutput()
+			Expect(err).NotTo(HaveOccurred())
+
+			// And a new branch and push it
+			expectedBranch := "test-branch"
+			_, err = git.CheckoutBranch(git.CheckoutBranchOpts{Create: true, Branch: expectedBranch})
+			Expect(err).NotTo(HaveOccurred())
+
+			command = exec.Command("git", "push", "--set-upstream", "origin", "test-branch")
+			_, err = command.CombinedOutput()
+			Expect(err).NotTo(HaveOccurred())
+
+
+			// When I delete the branch remotely
+			_, err = git.DeleteBranch(git.DeleteBranchOpts{Branch: expectedBranch, Remote:true})
+			Expect(err).NotTo(HaveOccurred())
+
+			// Then the branch should not exist any more on the remote
+			_, err = afero.ReadFile(fs, "remote/refs/heads/test-branch")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("open remote/refs/heads/test-branch: no such file or directory"))
+		})
 	})
 
 	Describe("Determining branches", func() {
