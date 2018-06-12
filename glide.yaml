@@ -1,9 +1,5 @@
 package: github.com/LGUG2Z/story
 import:
-- package: github.com/AlexsJones/kepler
-  version: v0.2
-  subpackages:
-  - commands/node
 - package: github.com/LGUG2Z/blastradius
   subpackages:
   - blastradius

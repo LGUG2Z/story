@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/AlexsJones/kepler/commands/node"
+	"github.com/LGUG2Z/story/node"
 	"github.com/LGUG2Z/blastradius/blastradius"
 	"github.com/LGUG2Z/story/git"
 	"github.com/fatih/color"

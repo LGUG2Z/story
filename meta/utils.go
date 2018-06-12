@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"github.com/AlexsJones/kepler/commands/node"
+	"github.com/LGUG2Z/story/node"
 	"github.com/spf13/afero"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4"
