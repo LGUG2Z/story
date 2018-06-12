@@ -1,8 +1,9 @@
 package git
 
 import (
-	"github.com/spf13/afero"
 	"fmt"
+	"github.com/spf13/afero"
+	"strings"
 )
 
 func getHead(fs afero.Fs, project, branch string) (string, error) {
@@ -11,7 +12,7 @@ func getHead(fs afero.Fs, project, branch string) (string, error) {
 		return "", err
 	}
 
-	return string(b), nil
+	return strings.TrimSpace(string(b)), nil
 }
 
 func HeadsAreEqual(fs afero.Fs, project, b1, b2 string) (bool, error) {
