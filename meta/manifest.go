@@ -8,8 +8,9 @@ import (
 
 	"github.com/AlexsJones/kepler/commands/node"
 	"github.com/LGUG2Z/blastradius/blastradius"
+	"github.com/LGUG2Z/story/git"
+	"github.com/fatih/color"
 	"github.com/spf13/afero"
-	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
 // Manifest represents a .meta JSON file, enriched with a "story" key
@@ -52,19 +53,18 @@ func (m *Manifest) Write() error {
 // SetStory moves the current global meta file to a backup file and initialises
 // a new .meta file for the given story
 func (m *Manifest) SetStory(story string) error {
-	repository, err := getRepository(".")
-	if err != nil {
-		return err
-	}
-
 	m.Global = &Manifest{Fs: m.Fs}
 	if err := m.Global.Load(".meta"); err != nil {
 		return err
 	}
 
-	if err = CheckoutBranch(story, repository); err != nil {
-		return fmt.Errorf("%s: %s", "meta-repo", err)
+	output, err := git.CheckoutBranchWithCreateIfRequired(story)
+	if err != nil {
+		return err
 	}
+
+	color.Green("metarepo")
+	fmt.Println(output)
 
 	_, err = m.Fs.Stat(".meta.json")
 	if err != nil {
@@ -94,14 +94,13 @@ func (m *Manifest) SetStory(story string) error {
 
 	if m.Projects != nil {
 		for project := range m.Projects {
-			repository, err := getRepository(project)
+			output, err := git.CheckoutBranch(git.CheckoutBranchOpts{Branch: m.Name, Project: project})
 			if err != nil {
 				return err
 			}
 
-			if err := CheckoutBranch(m.Name, repository); err != nil {
-				return fmt.Errorf("%s: %s", project, err)
-			}
+			color.Green(project)
+			fmt.Println(output)
 		}
 	}
 
@@ -116,24 +115,22 @@ func (m *Manifest) Reset() error {
 	}
 
 	for project := range m.Projects {
-		repository, err := getRepository(project)
+		output, err := git.CheckoutBranch(git.CheckoutBranchOpts{Branch: "master", Project: project})
 		if err != nil {
 			return err
 		}
 
-		if err := CheckoutBranch("master", repository); err != nil {
-			return fmt.Errorf("%s: %s", project, err)
-		}
+		color.Green(project)
+		fmt.Println(output)
 	}
 
-	repository, err := getRepository(".")
+	output, err := git.CheckoutBranch(git.CheckoutBranchOpts{Branch: "master"})
 	if err != nil {
 		return err
 	}
 
-	if err := CheckoutBranch("master", repository); err != nil {
-		return fmt.Errorf("%s: %s", "meta-repo", err)
-	}
+	color.Green("metarepo")
+	fmt.Println(output)
 
 	return nil
 }
@@ -169,14 +166,9 @@ func (m *Manifest) AddProjects(projects []string) error {
 
 			if _, exists := m.Projects[project]; !exists {
 				m.Projects[project] = fmt.Sprintf("git@github.com:%s/%s.git", os.Getenv("ORGANISATION"), project)
-
-				repository, err := getRepository(project)
+				_, err := git.CheckoutBranch(git.CheckoutBranchOpts{Branch: m.Name, Create: true, Project: project})
 				if err != nil {
 					return err
-				}
-
-				if err := CheckoutBranch(m.Name, repository); err != nil {
-					return fmt.Errorf("%s: %s", project, err)
 				}
 
 				fmt.Printf("added: %s\n", project)
@@ -200,6 +192,51 @@ func (m *Manifest) AddProjects(projects []string) error {
 	return err
 }
 
+func addPrivateDependencies(meta, story *Manifest, project string) ([]string, error) {
+	packageJSON := fmt.Sprintf("%s/package.json", project)
+
+	bytes, err := afero.ReadFile(story.Fs, packageJSON)
+	if err != nil {
+		return nil, err
+	}
+
+	p := node.PackageJSON{}
+	if err = json.Unmarshal(bytes, &p); err != nil {
+		return nil, err
+	}
+
+	var added []string
+
+	for dep := range p.Dependencies {
+		if _, exists := meta.Projects[dep]; exists {
+			if _, exists := story.Projects[dep]; !exists {
+				story.Projects[dep] = fmt.Sprintf("git@github.com:%s/%s.git", os.Getenv("ORGANISATION"), dep)
+				added = append(added, dep)
+
+				_, err := git.CheckoutBranch(git.CheckoutBranchOpts{Branch: story.Name, Create: true, Project: dep})
+				if err != nil {
+					return nil, err
+				}
+			}
+
+			if strings.HasSuffix(p.Dependencies[dep], ".git") {
+				p.Dependencies[dep] = fmt.Sprintf("%s#%s", p.Dependencies[dep], story.Name)
+			}
+		}
+	}
+
+	bytes, err = json.MarshalIndent(p, "", "  ")
+	if err != nil {
+		return nil, err
+	}
+
+	if err := afero.WriteFile(story.Fs, packageJSON, bytes, os.FileMode(0666)); err != nil {
+		return nil, err
+	}
+
+	return added, nil
+}
+
 // RemoveProjects removes one or more projects from the current Manifest object
 // and then writes that updated object back to disk
 func (m *Manifest) RemoveProjects(projects []string) error {
@@ -212,12 +249,8 @@ func (m *Manifest) RemoveProjects(projects []string) error {
 		if _, exists := m.Projects[project]; exists {
 			delete(m.Projects, project)
 
-			repository, err := getRepository(project)
+			_, err := git.DeleteBranch(git.DeleteBranchOpts{Branch: m.Name, Local: true, Project: project})
 			if err != nil {
-				return err
-			}
-
-			if err := DeleteBranch(m.Name, repository); err != nil {
 				return err
 			}
 
@@ -278,6 +311,58 @@ func (m *Manifest) RemoveProjects(projects []string) error {
 	return err
 }
 
+func removePrivateDependencies(meta, story *Manifest, project string) ([]string, error) {
+	packageJSON := fmt.Sprintf("%s/package.json", project)
+	bytes, err := afero.ReadFile(story.Fs, packageJSON)
+	if err != nil {
+		return nil, err
+	}
+
+	p := node.PackageJSON{}
+	if err = json.Unmarshal(bytes, &p); err != nil {
+		return nil, err
+	}
+
+	var removed []string
+
+	for dep := range p.Dependencies {
+		if _, exists := meta.Projects[dep]; exists {
+			if _, exists := story.Projects[dep]; exists {
+				delete(story.Projects, dep)
+				removed = append(removed, dep)
+
+				_, err := git.DeleteBranch(git.DeleteBranchOpts{Branch: story.Name, Local: true, Project: dep})
+				if err != nil {
+					return nil, err
+				}
+
+				storyBranch := fmt.Sprintf("#%s", story.Name)
+				if strings.HasSuffix(p.Dependencies[dep], storyBranch) {
+					p.Dependencies[dep] = strings.TrimSuffix(p.Dependencies[dep], storyBranch)
+				}
+			}
+		}
+	}
+
+	bytes, err = json.MarshalIndent(p, "", "  ")
+	if err != nil {
+		return nil, err
+	}
+
+	if err := afero.WriteFile(story.Fs, packageJSON, bytes, os.FileMode(0666)); err != nil {
+		return nil, err
+	}
+
+	for project := range story.Primaries {
+		_, err := addPrivateDependencies(meta, story, project)
+		if err != nil {
+			fmt.Printf("there was a problem reading %s/package.json\n", project)
+		}
+	}
+
+	return removed, nil
+}
+
 // TODO: Make a PackageJSON type with functions on it for this kind of stuff
 func (m *Manifest) updatePackageJSONFiles(packageJSONs map[string]*node.PackageJSON, dep string) {
 	for _, pkg := range packageJSONs {
@@ -305,25 +390,12 @@ func (m *Manifest) Prune() error {
 	var pruned []string
 
 	for project := range m.Projects {
-		repository, err := getRepository(project)
-		if err != nil {
-			return fmt.Errorf("%s: %s", project, err)
-		}
-
-		storyRevision := plumbing.Revision(fmt.Sprintf("refs/heads/%s", m.Name))
-		masterRevision := plumbing.Revision("master")
-
-		storyHash, err := repository.ResolveRevision(storyRevision)
+		equal, err := git.HeadsAreEqual(m.Fs, project, m.Name, "master")
 		if err != nil {
 			return err
 		}
 
-		masterHash, err := repository.ResolveRevision(masterRevision)
-		if err != nil {
-			return err
-		}
-
-		if storyHash.String() == masterHash.String() {
+		if equal {
 			if err := m.RemoveProjects([]string{project}); err != nil {
 				return err
 			}
@@ -380,14 +452,9 @@ func (m *Manifest) Blast() error {
 	}
 
 	for _, project := range blastRadius {
-		repository, err := getRepository(project)
+		_, err := git.CheckoutBranch(git.CheckoutBranchOpts{Branch: m.Name, Create: true, Project: project})
 		if err != nil {
 			return err
-		}
-
-		err = CheckoutBranch(m.Name, repository)
-		if err != nil {
-			return fmt.Errorf("%s: %s", project, err)
 		}
 
 		if _, exists := m.Projects[project]; !exists {
@@ -425,7 +492,6 @@ func (m *Manifest) Blast() error {
 			m.Deployables[deployable] = true
 		}
 	}
-
 
 	if err := m.Write(); err != nil {
 		return err
