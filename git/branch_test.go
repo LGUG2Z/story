@@ -198,4 +198,21 @@ var _ = Describe("Branch", func() {
 			Expect(actualBranch).To(Equal(expectedBranch))
 		})
 	})
+
+
+	Describe("Comparing branch heads", func() {
+		It("Should identify branches that have the same heads", func() {
+			// Given a repository, with a new branch checked out
+			expectedBranch := "test-branch"
+			_, err := git.CheckoutBranch(git.CheckoutBranchOpts{Create: true, Branch: expectedBranch})
+			Expect(err).NotTo(HaveOccurred())
+
+			// When I check the equality of the heads
+			areEqual, err := git.HeadsAreEqual(fs, ".", "test-branch", "master")
+			Expect(err).NotTo(HaveOccurred())
+
+			// Then they should be equal
+			Expect(areEqual).To(BeTrue())
+		})
+	})
 })
