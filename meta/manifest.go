@@ -6,9 +6,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/LGUG2Z/story/node"
 	"github.com/LGUG2Z/blastradius/blastradius"
 	"github.com/LGUG2Z/story/git"
+	"github.com/LGUG2Z/story/node"
 	"github.com/fatih/color"
 	"github.com/spf13/afero"
 )
