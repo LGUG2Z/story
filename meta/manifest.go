@@ -193,15 +193,8 @@ func (m *Manifest) AddProjects(projects []string) error {
 }
 
 func addPrivateDependencies(meta, story *Manifest, project string) ([]string, error) {
-	packageJSON := fmt.Sprintf("%s/package.json", project)
-
-	bytes, err := afero.ReadFile(story.Fs, packageJSON)
-	if err != nil {
-		return nil, err
-	}
-
 	p := node.PackageJSON{}
-	if err = json.Unmarshal(bytes, &p); err != nil {
+	if err := p.Load(story.Fs, project); err != nil {
 		return nil, err
 	}
 
@@ -219,18 +212,11 @@ func addPrivateDependencies(meta, story *Manifest, project string) ([]string, er
 				}
 			}
 
-			if strings.HasSuffix(p.Dependencies[dep], ".git") {
-				p.Dependencies[dep] = fmt.Sprintf("%s#%s", p.Dependencies[dep], story.Name)
-			}
+			p.SetPrivateDependencyBranchesToStory(meta.Projects, story.Name)
 		}
 	}
 
-	bytes, err = json.MarshalIndent(p, "", "  ")
-	if err != nil {
-		return nil, err
-	}
-
-	if err := afero.WriteFile(story.Fs, packageJSON, bytes, os.FileMode(0666)); err != nil {
+	if err := p.Write(story.Fs, project); err != nil {
 		return nil, err
 	}
 
