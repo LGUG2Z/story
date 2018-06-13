@@ -23,7 +23,7 @@ var invalidFile = []byte(`{
     "mocha": "*"
   }`)
 
-func packageJSONWithDependencies(dependencies []string) []byte {
+func packageJSONWithDependencies(dependencies ...string) []byte {
 	pkg := node.PackageJSON{
 		Name:         "test",
 		Dependencies: make(map[string]string),
@@ -46,7 +46,7 @@ var _ = Describe("PackageJSON", func() {
 	Describe("Loading a file", func() {
 		It("It should load a valid package.json file", func() {
 			// Given a project with a valid package.json file
-			validFile := packageJSONWithDependencies([]string{"one", "two", "three"})
+			validFile := packageJSONWithDependencies("one", "two", "three")
 			if err := fs.MkdirAll("valid", os.FileMode(0700)); err != nil {
 				Fail(err.Error())
 			}
@@ -85,7 +85,7 @@ var _ = Describe("PackageJSON", func() {
 			}
 
 			// And a PackageJSON object
-			b := packageJSONWithDependencies([]string{"one", "two", "three"})
+			b := packageJSONWithDependencies("one", "two", "three")
 			Expect(json.Unmarshal(b, &p)).To(Succeed())
 
 			// When I write the object for a project
@@ -94,6 +94,42 @@ var _ = Describe("PackageJSON", func() {
 			// Then the file is written
 			_, err := afero.ReadFile(fs, "valid/package.json")
 			Expect(err).NotTo(HaveOccurred())
+		})
+	})
+
+	Describe("Updating dependency branches", func() {
+		It("Should update only the dependencies of projects in allProjects", func() {
+			// Given a map of all projects and story projects
+			allProjects := make(map[string]string)
+			for _, project := range []string{"one"} {
+				allProjects[project] = ""
+			}
+
+			// And an unmarshalled package.json file
+			b := packageJSONWithDependencies("one", "two")
+			Expect(json.Unmarshal(b, &p)).To(Succeed())
+
+			// When I update the dependencies to the story branch
+			p.SetPrivateDependencyBranchesToStory(allProjects, "test-story")
+
+			// Then the project in allProjects should be updated
+			Expect(p.Dependencies["one"]).To(Equal("git+ssh://git@github.com:TestOrg/one.git#test-story"))
+
+			// But the project not in allProjects should not be updated
+			Expect(p.Dependencies["two"]).To(Equal("git+ssh://git@github.com:TestOrg/two.git"))
+		})
+
+		It("Should reset all modified dependencies to use the master branch", func() {
+			// Given a package.json file with a dependency pinned to a story branch
+			b := packageJSONWithDependencies("one", "two")
+			Expect(json.Unmarshal(b, &p)).To(Succeed())
+			p.Dependencies["one"] = "git+ssh://git@github.com:TestOrg/one.git#test-story"
+
+			// When I reset all the modified branches
+			p.ResetPrivateDependencyBranchesToMaster("test-story")
+
+			// Then that dependency should point to the master branch
+			Expect(p.Dependencies["one"]).To(Equal("git+ssh://git@github.com:TestOrg/one.git"))
 		})
 	})
 })

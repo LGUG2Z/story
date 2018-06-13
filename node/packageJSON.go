@@ -48,7 +48,7 @@ func (p *PackageJSON) setPrivateDependencyBranchToStory(dependency, story string
 	}
 }
 
-func (p *PackageJSON) SetPrivateDependencyBranchesToStory(allProjects, storyProjects map[string]string, story string) {
+func (p *PackageJSON) SetPrivateDependencyBranchesToStory(allProjects map[string]string, story string) {
 	for dependency := range p.Dependencies {
 		if _, exists := allProjects[dependency]; exists {
 			p.setPrivateDependencyBranchToStory(dependency, story)
@@ -56,13 +56,11 @@ func (p *PackageJSON) SetPrivateDependencyBranchesToStory(allProjects, storyProj
 	}
 }
 
-func (p *PackageJSON) ResetPrivateDependencyBranchesToMaster(story string) error {
+func (p *PackageJSON) ResetPrivateDependencyBranchesToMaster(story string) {
 	storyBranch := fmt.Sprintf("#%s", story)
 	for pkg, src := range p.Dependencies {
 		if strings.HasSuffix(src, storyBranch) {
 			p.Dependencies[pkg] = strings.TrimSuffix(src, storyBranch)
 		}
 	}
-
-	return nil
 }
