@@ -49,8 +49,45 @@ func Execute(args ...string) error {
 		return nil
 	}
 
-	set := cli.Command{
-		Name: "set",
+	load := cli.Command{
+		Name: "load",
+		Action: cli.ActionFunc(func(c *cli.Context) error {
+			if isStory {
+				return fmt.Errorf("already working on a story")
+			}
+
+			if !c.Args().Present() {
+				return fmt.Errorf("this command requires an argument")
+			}
+
+			name := c.Args().First()
+			output, err := git.CheckoutBranch(git.CheckoutBranchOpts{Branch: name})
+			if err != nil {
+				return err
+			}
+
+			printGitOutput(output, "metarepo")
+
+			story, err := manifest.LoadStory(fs)
+			if err != nil {
+				return err
+			}
+
+			for project, _ := range story.Projects {
+				output, err := git.CheckoutBranch(git.CheckoutBranchOpts{Branch: name, Project: project})
+				if err != nil {
+					return err
+				}
+
+				printGitOutput(output, project)
+			}
+
+			return nil
+		}),
+	}
+
+	create := cli.Command{
+		Name: "create",
 		Action: cli.ActionFunc(func(c *cli.Context) error {
 			if isStory {
 				return fmt.Errorf("already working on a story")
@@ -68,7 +105,7 @@ func Execute(args ...string) error {
 			}
 
 			story := manifest.NewStory(name, meta)
-			output, err := git.CheckoutBranchWithCreateIfRequired(name)
+			output, err := git.CheckoutBranch(git.CheckoutBranchOpts{Branch: story.Name, Create: true})
 			if err != nil {
 				return err
 			}
@@ -99,8 +136,8 @@ func Execute(args ...string) error {
 			}
 
 			story, err := manifest.LoadStory(fs)
-			for _, project := range story.Projects {
-				output, err := git.CheckoutBranch(git.CheckoutBranchOpts{Branch: "master", Project: project})
+			for project := range story.Projects {
+				output, err := git.CheckoutBranch(git.CheckoutBranchOpts{Branch: trunk, Project: project})
 				if err != nil {
 					return err
 				}
@@ -108,7 +145,7 @@ func Execute(args ...string) error {
 				printGitOutput(output, project)
 			}
 
-			output, err := git.CheckoutBranch(git.CheckoutBranchOpts{Branch: "master"})
+			output, err := git.CheckoutBranch(git.CheckoutBranchOpts{Branch: trunk})
 			if err != nil {
 				return err
 			}
@@ -260,7 +297,8 @@ func Execute(args ...string) error {
 		}),
 	}
 	commands := []cli.Command{
-		set,
+		create,
+		load,
 		reset,
 		add,
 		remove,
