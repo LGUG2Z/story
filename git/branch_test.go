@@ -130,38 +130,6 @@ var _ = Describe("Branch", func() {
 			Expect(err).To(HaveOccurred())
 
 		})
-
-		It("Should checkout a branch and create it if it doesn't exist", func() {
-			// Given a repository
-
-			// When I check out a branch that hasn't been created
-			expectedBranch := "test-branch"
-			_, err := git.CheckoutBranchWithCreateIfRequired(expectedBranch)
-			Expect(err).NotTo(HaveOccurred())
-
-			// Then that branch should be created and set as the current branch
-			actualBranch, err := git.GetCurrentBranch(fs, ".")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(actualBranch).To(Equal(expectedBranch))
-		})
-
-		It("Should checkout a branch if it exists", func() {
-			// Given a repository, with a new branch, reverted back to master
-			expectedBranch := "test-branch"
-			_, err := git.CheckoutBranch(git.CheckoutBranchOpts{Create: true, Branch: expectedBranch})
-			Expect(err).NotTo(HaveOccurred())
-			_, err = git.CheckoutBranch(git.CheckoutBranchOpts{Branch: "master"})
-			Expect(err).NotTo(HaveOccurred())
-
-			// When I check out a branch that hasn't been created
-			_, err = git.CheckoutBranchWithCreateIfRequired(expectedBranch)
-			Expect(err).NotTo(HaveOccurred())
-
-			// Then that branch should be created and set as the current branch
-			actualBranch, err := git.GetCurrentBranch(fs, ".")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(actualBranch).To(Equal(expectedBranch))
-		})
 	})
 
 	Describe("Deleting branches", func() {

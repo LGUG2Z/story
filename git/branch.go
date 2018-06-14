@@ -14,28 +14,6 @@ type CheckoutBranchOpts struct {
 	Project string
 }
 
-func CheckoutBranchWithCreateIfRequired(branch string) (string, error) {
-	output, err := CheckoutBranch(CheckoutBranchOpts{Branch: branch})
-	if err == nil {
-		return output, nil
-	}
-
-	if err != nil && err.Error() == fmt.Sprintf("error: pathspec '%s' did not match any file(s) known to git.", branch) {
-		err = nil
-	}
-
-	if err != nil {
-		return "", err
-	}
-
-	output, err = CheckoutBranch(CheckoutBranchOpts{Branch: branch, Create: true})
-	if err != nil {
-		return "", err
-	}
-
-	return output, nil
-}
-
 func CheckoutBranch(opts CheckoutBranchOpts) (string, error) {
 	var args []string
 	args = append(args, "checkout")
@@ -126,4 +104,27 @@ func GetCurrentBranch(fs afero.Fs, project string) (string, error) {
 	}
 
 	return strings.TrimSpace(strings.TrimPrefix(string(b), "ref: refs/heads/")), nil
+}
+
+func HeadsAreEqual(fs afero.Fs, project, b1, b2 string) (bool, error) {
+	h1, err := getHead(fs, project, b1)
+	if err != nil {
+		return false, err
+	}
+
+	h2, err := getHead(fs, project, b2)
+	if err != nil {
+		return false, err
+	}
+
+	return h1 == h2, nil
+}
+
+func getHead(fs afero.Fs, project, branch string) (string, error) {
+	b, err := afero.ReadFile(fs, fmt.Sprintf("%s/.git/refs/heads/%s", project, branch))
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimSpace(string(b)), nil
 }
