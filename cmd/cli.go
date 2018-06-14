@@ -73,7 +73,7 @@ func Execute(args ...string) error {
 				return err
 			}
 
-			for project, _ := range story.Projects {
+			for project := range story.Projects {
 				output, err := git.CheckoutBranch(git.CheckoutBranchOpts{Branch: name, Project: project})
 				if err != nil {
 					return err
@@ -211,12 +211,12 @@ func Execute(args ...string) error {
 			}
 
 			var projectList []string
-			for project, _ := range story.Projects {
+			for project := range story.Projects {
 				projectList = append(projectList, project)
 			}
 
 			// Update all of the package.json files where any other added project is used
-			for project, _ := range story.Projects {
+			for project := range story.Projects {
 				p := node.PackageJSON{}
 				if err := p.Load(fs, project); err != nil {
 					return err
@@ -276,12 +276,12 @@ func Execute(args ...string) error {
 			}
 
 			var projectList []string
-			for project, _ := range story.Projects {
+			for project := range story.Projects {
 				projectList = append(projectList, project)
 			}
 
 			// Update all of the package.json files where any removed project is used
-			for project, _ := range story.Projects {
+			for project := range story.Projects {
 				p := node.PackageJSON{}
 				if err := p.Load(fs, project); err != nil {
 					return err

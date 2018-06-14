@@ -65,7 +65,7 @@ func (p *PackageJSON) resetPrivateDependencyBranch(dependency, story string) {
 }
 
 func (p *PackageJSON) ResetPrivateDependencyBranches(toReset, story string, projects ...string) {
-	for _, _ = range projects {
+	for range projects {
 		if _, exists := p.Dependencies[toReset]; exists {
 			p.resetPrivateDependencyBranch(toReset, story)
 		}

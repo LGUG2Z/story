@@ -57,7 +57,7 @@ func (s *Story) Set(name string) {
 }
 
 func (s *Story) MapBlastRadiusToDeployables() {
-	for project, _ := range s.Deployables {
+	for project := range s.Deployables {
 		s.Deployables[project] = false
 	}
 
@@ -89,7 +89,7 @@ func (s *Story) CalculateBlastRadiusForProject(fs afero.Fs, blaster blastradius.
 func (s *Story) GetDeployables() string {
 	var artifacts []string
 
-	for project, _ := range s.Deployables {
+	for project := range s.Deployables {
 		if s.Deployables[project] {
 			artifacts = append(artifacts, project)
 		}
