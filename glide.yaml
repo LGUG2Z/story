@@ -1,6 +1,7 @@
 package: github.com/LGUG2Z/story
 import:
 - package: github.com/LGUG2Z/blastradius
+  version: 16c28c51109499537f36fb020fe1ad1f536cf65f
   subpackages:
   - blastradius
 - package: github.com/fatih/color

@@ -1,4 +1,4 @@
-package meta_test
+package manifest_test
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestMeta(t *testing.T) {
+func TestManifest(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Meta Suite")
+	RunSpecs(t, "Manifest Suite")
 }

@@ -1,62 +1,52 @@
-package meta_test
+package manifest_test
 
 import (
 	"fmt"
 
-	"github.com/LGUG2Z/story/meta"
+	"github.com/LGUG2Z/story/manifest"
 	"github.com/LGUG2Z/story/node"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
 )
 
-type TRadius struct {
-	BlastRadius []string
+type MockRadius struct {
+	Radius []string
 }
 
 type BlastRadiusBuilder struct {
-	blastRadius *TRadius
+	mockRadius *MockRadius
 }
 
 func NewBlastRadiusBuilder() *BlastRadiusBuilder {
-	blastRadius := &TRadius{}
-	b := &BlastRadiusBuilder{blastRadius: blastRadius}
+	blastRadius := &MockRadius{}
+	b := &BlastRadiusBuilder{mockRadius: blastRadius}
 	return b
 }
 
 func (b *BlastRadiusBuilder) BlastRadius(projects ...string) *BlastRadiusBuilder {
 	for _, project := range projects {
-		b.blastRadius.BlastRadius = append(b.blastRadius.BlastRadius, project)
+		b.mockRadius.Radius = append(b.mockRadius.Radius, project)
 	}
 
 	return b
 }
 
-func (b *BlastRadiusBuilder) Build() *TRadius {
-	return b.blastRadius
+func (b *BlastRadiusBuilder) Build() *MockRadius {
+	return b.mockRadius
 }
 
-func (r *TRadius) Calculate(fs afero.Fs, metarepo, project string) ([]string, error) {
-	return r.BlastRadius, nil
+func (r *MockRadius) Calculate(fs afero.Fs, metarepo, project string) ([]string, error) {
+	return r.Radius, nil
 }
 
 type StoryBuilder struct {
-	story *meta.Story
+	story *manifest.Story
 }
 
 func NewStoryBuilder() *StoryBuilder {
-	story := &meta.Story{}
+	story := &manifest.Story{}
 	b := &StoryBuilder{story: story}
-	return b
-}
-
-func (b *StoryBuilder) Fs(fs afero.Fs) *StoryBuilder {
-	b.story.Fs = fs
-	return b
-}
-
-func (b *StoryBuilder) Global(global *meta.Manifest) *StoryBuilder {
-	b.story.Global = global
 	return b
 }
 
@@ -95,12 +85,12 @@ func (b *StoryBuilder) PackageJSONs(packageJSONs map[string]*node.PackageJSON) *
 	return b
 }
 
-func (b *StoryBuilder) BlastRadius(blastRadius map[string]*[]string) *StoryBuilder {
+func (b *StoryBuilder) BlastRadius(blastRadius map[string][]string) *StoryBuilder {
 	b.story.BlastRadius = blastRadius
 	return b
 }
 
-func (b *StoryBuilder) Build() *meta.Story {
+func (b *StoryBuilder) Build() *manifest.Story {
 	return b.story
 }
 
@@ -111,10 +101,12 @@ var _ = Describe("Meta", func() {
 			s := NewStoryBuilder().Name("test-story").Organisation("test-org").Build()
 
 			// When I add a project to that story
-			s.AddToManifest("test-project")
+			allProjects := make(map[string]string)
+			allProjects["test-project"] = "test"
+			s.AddToManifest(allProjects, "test-project")
 
 			// It should update the story
-			Expect(s.Projects).To(HaveKeyWithValue("test-project", "git+ssh://git@github.com:test-org/test-project.git"))
+			Expect(s.Projects).To(HaveKeyWithValue("test-project", "git@github.com:test-org/test-project.git"))
 		})
 	})
 
@@ -165,17 +157,17 @@ var _ = Describe("Meta", func() {
 				Build()
 
 			// WHen I calculate the blast radius for a story
-			Expect(s.CalculateBlastRadiusForProject(b, "one")).To(Succeed())
+			Expect(s.CalculateBlastRadiusForProject(afero.NewMemMapFs(), b, "one")).To(Succeed())
 
 			// It should be reflected in the manifest
-			Expect(s.BlastRadius).To(HaveKeyWithValue("one", &[]string{"three", "four", "five"}))
+			Expect(s.BlastRadius).To(HaveKeyWithValue("one", []string{"three", "four", "five"}))
 		})
 
 		It("Should map the blast radius of a story to deployable artifacts", func() {
 			// Given a story with a story, false deployables and a blast radius
-			b := make(map[string]*[]string)
-			b["four"] = &[]string{"one", "nine"}
-			b["five"] = &[]string{"two", "ten"}
+			b := make(map[string][]string)
+			b["four"] = []string{"one", "nine"}
+			b["five"] = []string{"two", "ten"}
 
 			s := NewStoryBuilder().
 				Name("test-story").
