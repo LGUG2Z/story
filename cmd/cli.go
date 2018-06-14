@@ -136,6 +136,10 @@ func Execute(args ...string) error {
 			}
 
 			story, err := manifest.LoadStory(fs)
+			if err != nil {
+				return err
+			}
+
 			for project := range story.Projects {
 				output, err := git.CheckoutBranch(git.CheckoutBranchOpts{Branch: trunk, Project: project})
 				if err != nil {
