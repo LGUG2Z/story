@@ -41,11 +41,7 @@ func CreateCmd() cli.Command {
 				return err
 			}
 
-			if err := story.Write(fs); err != nil {
-				return err
-			}
-
-			return nil
+			return story.Write(fs)
 		},
 	}
 }
