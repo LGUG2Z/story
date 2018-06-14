@@ -1,94 +1,19 @@
-package cmd
+package cli
 
 import (
 	"fmt"
-
-	"time"
 
 	"github.com/LGUG2Z/blastradius/blastradius"
 	"github.com/LGUG2Z/story/git"
 	"github.com/LGUG2Z/story/manifest"
 	"github.com/LGUG2Z/story/node"
-	"github.com/fatih/color"
-	"github.com/spf13/afero"
 	"github.com/urfave/cli"
 )
 
-var fs afero.Fs
-var isStory bool
-var trunk string
-
-func Execute(args ...string) error {
-	app := cli.NewApp()
-	app.Name = "story"
-	app.Usage = "A workflow tool for implementing stories across a meta-repo"
-	app.EnableBashCompletion = true
-	app.Compiled = time.Now()
-	app.Authors = []cli.Author{{
-		Name:  "J. Iqbal",
-		Email: "jade@beamery.com",
-	}}
-
-	app.Flags = []cli.Flag{
-		cli.StringFlag{
-			Name:  "trunk",
-			Value: "master",
-		},
-	}
-
-	app.Before = func(c *cli.Context) error {
-		fs = afero.NewOsFs()
-		trunk = c.String("trunk")
-		branch, err := git.GetCurrentBranch(fs, ".")
-		if err != nil {
-			return err
-		}
-
-		isStory = branch != trunk
-
-		return nil
-	}
-
-	load := cli.Command{
-		Name: "load",
-		Action: cli.ActionFunc(func(c *cli.Context) error {
-			if isStory {
-				return fmt.Errorf("already working on a story")
-			}
-
-			if !c.Args().Present() {
-				return fmt.Errorf("this command requires an argument")
-			}
-
-			name := c.Args().First()
-			output, err := git.CheckoutBranch(git.CheckoutBranchOpts{Branch: name})
-			if err != nil {
-				return err
-			}
-
-			printGitOutput(output, "metarepo")
-
-			story, err := manifest.LoadStory(fs)
-			if err != nil {
-				return err
-			}
-
-			for project := range story.Projects {
-				output, err := git.CheckoutBranch(git.CheckoutBranchOpts{Branch: name, Project: project})
-				if err != nil {
-					return err
-				}
-
-				printGitOutput(output, project)
-			}
-
-			return nil
-		}),
-	}
-
-	create := cli.Command{
+func CreateCmd() cli.Command {
+	return cli.Command{
 		Name: "create",
-		Action: cli.ActionFunc(func(c *cli.Context) error {
+		Action: func(c *cli.Context) error {
 			if isStory {
 				return fmt.Errorf("already working on a story")
 			}
@@ -121,12 +46,53 @@ func Execute(args ...string) error {
 			}
 
 			return nil
-		}),
+		},
 	}
+}
 
-	reset := cli.Command{
+func LoadCmd() cli.Command {
+	return cli.Command{
+		Name: "load",
+		Action: func(c *cli.Context) error {
+			if isStory {
+				return fmt.Errorf("already working on a story")
+			}
+
+			if !c.Args().Present() {
+				return fmt.Errorf("this command requires an argument")
+			}
+
+			name := c.Args().First()
+			output, err := git.CheckoutBranch(git.CheckoutBranchOpts{Branch: name})
+			if err != nil {
+				return err
+			}
+
+			printGitOutput(output, "metarepo")
+
+			story, err := manifest.LoadStory(fs)
+			if err != nil {
+				return err
+			}
+
+			for project := range story.Projects {
+				output, err := git.CheckoutBranch(git.CheckoutBranchOpts{Branch: name, Project: project})
+				if err != nil {
+					return err
+				}
+
+				printGitOutput(output, project)
+			}
+
+			return nil
+		},
+	}
+}
+
+func ResetCmd() cli.Command {
+	return cli.Command{
 		Name: "reset",
-		Action: cli.ActionFunc(func(c *cli.Context) error {
+		Action: func(c *cli.Context) error {
 			if !isStory {
 				return fmt.Errorf("not working on a story")
 			}
@@ -156,12 +122,14 @@ func Execute(args ...string) error {
 
 			printGitOutput(output, "metarepo")
 			return nil
-		}),
+		},
 	}
+}
 
-	add := cli.Command{
+func AddCmd() cli.Command {
+	return cli.Command{
 		Name: "add",
-		Action: cli.ActionFunc(func(c *cli.Context) error {
+		Action: func(c *cli.Context) error {
 			if !isStory {
 				return fmt.Errorf("not working on a story")
 			}
@@ -231,12 +199,14 @@ func Execute(args ...string) error {
 			}
 
 			return nil
-		}),
+		},
 	}
+}
 
-	remove := cli.Command{
+func RemoveCmd() cli.Command {
+	return cli.Command{
 		Name: "remove",
-		Action: cli.ActionFunc(func(c *cli.Context) error {
+		Action: func(c *cli.Context) error {
 			if !isStory {
 				return fmt.Errorf("not working on a story")
 			}
@@ -298,22 +268,6 @@ func Execute(args ...string) error {
 			}
 
 			return nil
-		}),
+		},
 	}
-	commands := []cli.Command{
-		create,
-		load,
-		reset,
-		add,
-		remove,
-	}
-
-	app.Commands = commands
-
-	return app.Run(args)
-}
-
-func printGitOutput(output, project string) {
-	color.Green(project)
-	fmt.Println(output)
 }
