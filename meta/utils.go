@@ -8,6 +8,11 @@ import (
 	"github.com/spf13/afero"
 )
 
+
+type IBlastRadius interface {
+	Calculate(fs afero.Fs, metarepo, project string) ([]string, error)
+}
+
 func getPackageJSON(fs afero.Fs, project string) (*node.PackageJSON, error) {
 	packageJSON := &node.PackageJSON{}
 	bytes, err := afero.ReadFile(fs, fmt.Sprintf("%s/package.json", project))

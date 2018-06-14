@@ -31,12 +31,12 @@ func createMetaRepo(globalMeta []byte) error {
 	//	return err
 	//}
 	//
-	//_, err = wt.Add(".meta")
+	//_, err = wt.AddToManifest(".meta")
 	//if err != nil {
 	//	return err
 	//}
 	//
-	//_, err = wt.Add(".gitignore")
+	//_, err = wt.AddToManifest(".gitignore")
 	//if err != nil {
 	//	return err
 	//}
@@ -64,7 +64,7 @@ func addProjectToMetaRepo(project string, packageJSON []byte) error {
 	//	return err
 	//}
 	//
-	//_, err = wt.Add("package.json")
+	//_, err = wt.AddToManifest("package.json")
 	//if err != nil {
 	//	return err
 	//}
@@ -86,7 +86,7 @@ func commitFilesToProjectRepo(relativeProjectPath string, files []string) error 
 	//Expect(err).NotTo(HaveOccurred())
 	//
 	//for _, file := range files {
-	//	_, err = wt.Add(file)
+	//	_, err = wt.AddToManifest(file)
 	//	if err != nil {
 	//		return err
 	//	}
@@ -148,7 +148,7 @@ func storyMetaWithProjects(name string, projects []string) []byte {
 	return bytes
 }
 
-var _ = Describe("Meta", func() {
+var _ = PDescribe("Meta", func() {
 	globalMeta := globalMetaWithProjects([]string{"one", "two", "three"})
 	one := packageJSONWithDependencies([]string{})
 	two := packageJSONWithDependencies([]string{"one"})
@@ -587,7 +587,7 @@ var _ = Describe("Meta", func() {
 	//			workTree, err := repository.Worktree()
 	//
 	//			Expect(err).NotTo(HaveOccurred())
-	//			workTree.Add("README.md")
+	//			workTree.AddToManifest("README.md")
 	//
 	//			_, err = workTree.Commit("adding readme", &git.CommitOptions{
 	//				Author: &object.Signature{Name: "some-author", Email: "some@author.com"},
@@ -633,7 +633,7 @@ var _ = Describe("Meta", func() {
 	//			workTree, err := repository.Worktree()
 	//
 	//			Expect(err).NotTo(HaveOccurred())
-	//			workTree.Add("README.md")
+	//			workTree.AddToManifest("README.md")
 	//
 	//			_, err = workTree.Commit("adding readme", &git.CommitOptions{
 	//				Author: &object.Signature{Name: "some-author", Email: "some@author.com"},
