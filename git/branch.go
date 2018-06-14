@@ -43,6 +43,7 @@ func CheckoutBranch(opts CheckoutBranchOpts) (string, error) {
 		args = append(args, "-b")
 
 	}
+
 	args = append(args, opts.Branch)
 
 	command := exec.Command("git", args...)

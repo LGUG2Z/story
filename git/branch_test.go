@@ -207,9 +207,8 @@ var _ = Describe("Branch", func() {
 			_, err = command.CombinedOutput()
 			Expect(err).NotTo(HaveOccurred())
 
-
 			// When I delete the branch remotely
-			_, err = git.DeleteBranch(git.DeleteBranchOpts{Branch: expectedBranch, Remote:true})
+			_, err = git.DeleteBranch(git.DeleteBranchOpts{Branch: expectedBranch, Remote: true})
 			Expect(err).NotTo(HaveOccurred())
 
 			// Then the branch should not exist any more on the remote
@@ -234,7 +233,6 @@ var _ = Describe("Branch", func() {
 			Expect(actualBranch).To(Equal(expectedBranch))
 		})
 	})
-
 
 	Describe("Comparing branch heads", func() {
 		It("Should identify branches that have the same heads", func() {
