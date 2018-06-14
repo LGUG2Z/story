@@ -52,7 +52,7 @@ func CheckoutBranch(opts CheckoutBranchOpts) (string, error) {
 
 	combinedOutput, err := command.CombinedOutput()
 	if err != nil {
-		return "", fmt.Errorf("%s", strings.TrimSpace(string(combinedOutput)))
+		return "", fmt.Errorf("%s", err.Error())
 	}
 
 	return strings.TrimSpace(string(combinedOutput)), nil
