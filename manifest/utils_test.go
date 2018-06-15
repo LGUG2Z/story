@@ -92,7 +92,6 @@ func (b *StoryBuilder) Build() *manifest.Story {
 	return b.story
 }
 
-
 type MetaBuilder struct {
 	meta *manifest.Meta
 }
@@ -131,4 +130,3 @@ func (b *MetaBuilder) Projects(projects ...string) *MetaBuilder {
 func (b *MetaBuilder) Build() *manifest.Meta {
 	return b.meta
 }
-

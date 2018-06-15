@@ -123,7 +123,7 @@ var _ = Describe("PackageJSON", func() {
 			p.Dependencies["one"] = "git+ssh://git@github.com:TestOrg/one.git#test-story"
 
 			// When I reset all the modified branches
-			p.ResetPrivateDependencyBranches("one", "test-story",)
+			p.ResetPrivateDependencyBranches("one", "test-story")
 
 			// Then that dependency should point to the master branch
 			Expect(p.Dependencies["one"]).To(Equal("git+ssh://git@github.com:TestOrg/one.git"))

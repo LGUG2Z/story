@@ -4,9 +4,10 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/spf13/afero"
 	"os"
+
 	"github.com/LGUG2Z/story/manifest"
+	"github.com/spf13/afero"
 )
 
 var _ = Describe("Meta", func() {
