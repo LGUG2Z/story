@@ -31,7 +31,7 @@ func CheckoutBranch(opts CheckoutBranchOpts) (string, error) {
 
 	combinedOutput, err := command.CombinedOutput()
 	if err != nil {
-		return "", fmt.Errorf("%s", err.Error())
+		return "", err
 	}
 
 	return strings.TrimSpace(string(combinedOutput)), nil
@@ -48,9 +48,9 @@ func DeleteBranch(opts DeleteBranchOpts) (string, error) {
 	var outputs []string
 
 	if opts.Local {
-		combinedOutput, err := CheckoutBranch(CheckoutBranchOpts{Branch: "master", Project: opts.Project})
+		_, err := CheckoutBranch(CheckoutBranchOpts{Branch: "master", Project: opts.Project})
 		if err != nil {
-			return "", fmt.Errorf("%s", strings.TrimSpace(string(combinedOutput)))
+			return "", err
 		}
 	}
 
@@ -68,7 +68,7 @@ func DeleteBranch(opts DeleteBranchOpts) (string, error) {
 
 		combinedOutput, err := command.CombinedOutput()
 		if err != nil {
-			return "", fmt.Errorf("%s", strings.TrimSpace(string(combinedOutput)))
+			return "", err
 		}
 
 		outputs = append(outputs, strings.TrimSpace(string(combinedOutput)))
@@ -88,7 +88,7 @@ func DeleteBranch(opts DeleteBranchOpts) (string, error) {
 
 		combinedOutput, err := command.CombinedOutput()
 		if err != nil {
-			return "", fmt.Errorf("%s", strings.TrimSpace(string(combinedOutput)))
+			return "", err
 		}
 
 		outputs = append(outputs, strings.TrimSpace(string(combinedOutput)))
