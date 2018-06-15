@@ -1,10 +1,10 @@
 package manifest_test
 
 import (
+	"github.com/LGUG2Z/story/manifest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
-	"github.com/LGUG2Z/story/manifest"
 )
 
 var _ = Describe("Meta", func() {
@@ -24,6 +24,48 @@ var _ = Describe("Meta", func() {
 			Expect(s.Name).To(Equal("test-story"))
 			Expect(s.Orgranisation).To(Equal("test-org"))
 			Expect(s.Deployables).To(HaveKeyWithValue("one", false))
+		})
+	})
+
+	Describe("Writing a story to a file", func() {
+		It("Should marshal the object with indentation and write to a .meta file", func() {
+			// Given a story object
+			s := NewStoryBuilder().
+				Name("test-story").
+				Organisation("test-org").
+				Projects("one").
+				Deployables(true, "one").
+				BlastRadius(map[string][]string{"one": {}}).
+				Build()
+
+			fs := afero.NewMemMapFs()
+
+			// When I write the story to a file
+			Expect(s.Write(fs)).To(Succeed())
+
+			// Then then the file exists on the fs
+			exists, err := afero.Exists(fs, ".meta")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(exists).To(BeTrue())
+
+			// And it is indented with two spaces
+			bytes, err := afero.ReadFile(fs, ".meta")
+			Expect(err).NotTo(HaveOccurred())
+			actual := string(bytes)
+			expected := `{
+  "blast-radius": {
+    "one": []
+  },
+  "deployables": {
+    "one": true
+  },
+  "story": "test-story",
+  "organisation": "test-org",
+  "projects": {
+    "one": "git@github.com:test-org/one.git"
+  }
+}`
+			Expect(actual).To(Equal(expected))
 		})
 	})
 
@@ -55,7 +97,7 @@ var _ = Describe("Meta", func() {
 			s.RemoveFromManifest("test-project")
 
 			// It should update the story
-			Expect(s.Projects).ToNot(HaveKeyWithValue("test-project", "git+ssh://git@github.com:test-org/test-project.git"))
+			Expect(s.Projects).ToNot(HaveKeyWithValue("test-project", "git@github.com:test-org/test-project.git"))
 		})
 	})
 

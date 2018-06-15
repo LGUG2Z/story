@@ -72,7 +72,7 @@ func (b *StoryBuilder) Projects(projects ...string) *StoryBuilder {
 	b.story.Projects = make(map[string]string)
 
 	for _, project := range projects {
-		b.story.Projects[project] = fmt.Sprintf("git+ssh://git@github.com:%s/%s.git", b.story.Orgranisation, project)
+		b.story.Projects[project] = fmt.Sprintf("git@github.com:%s/%s.git", b.story.Orgranisation, project)
 	}
 
 	return b
@@ -122,7 +122,7 @@ func (b *MetaBuilder) Projects(projects ...string) *MetaBuilder {
 	b.meta.Projects = make(map[string]string)
 
 	for _, project := range projects {
-		b.meta.Projects[project] = fmt.Sprintf("git+ssh://git@github.com:%s/%s.git", b.meta.Orgranisation, project)
+		b.meta.Projects[project] = fmt.Sprintf("git@github.com:%s/%s.git", b.meta.Orgranisation, project)
 	}
 
 	return b
