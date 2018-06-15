@@ -52,6 +52,8 @@ func App() *cli.App {
 		ResetCmd(),
 		AddCmd(),
 		RemoveCmd(),
+		ListCmd(),
+		DeployablesCmd(),
 	}
 
 	return app

@@ -122,9 +122,65 @@ func ResetCmd() cli.Command {
 	}
 }
 
+func ListCmd() cli.Command {
+	return cli.Command{
+		Name:    "list",
+		Aliases: []string{"ls"},
+		Action: func(c *cli.Context) error {
+			if !isStory {
+				return fmt.Errorf("not working on a story")
+			}
+
+			if c.Args().Present() {
+				return fmt.Errorf("this command takes no arguments")
+			}
+
+			story, err := manifest.LoadStory(fs)
+			if err != nil {
+				return err
+			}
+
+			for project := range story.Projects {
+				fmt.Println(project)
+			}
+
+			return nil
+		},
+	}
+}
+
+func DeployablesCmd() cli.Command {
+	return cli.Command{
+		Name: "deployables",
+		Action: func(c *cli.Context) error {
+			if !isStory {
+				return fmt.Errorf("not working on a story")
+			}
+
+			if c.Args().Present() {
+				return fmt.Errorf("this command takes no arguments")
+			}
+
+			story, err := manifest.LoadStory(fs)
+			if err != nil {
+				return err
+			}
+
+			for project := range story.Deployables {
+				if story.Deployables[project] {
+					fmt.Println(project)
+				}
+			}
+
+			return nil
+		},
+	}
+}
+
 func AddCmd() cli.Command {
 	return cli.Command{
-		Name: "add",
+		Name:    "add",
+		Aliases: []string{"a"},
 		Action: func(c *cli.Context) error {
 			if !isStory {
 				return fmt.Errorf("not working on a story")
@@ -201,7 +257,8 @@ func AddCmd() cli.Command {
 
 func RemoveCmd() cli.Command {
 	return cli.Command{
-		Name: "remove",
+		Name:    "remove",
+		Aliases: []string{"rm"},
 		Action: func(c *cli.Context) error {
 			if !isStory {
 				return fmt.Errorf("not working on a story")
