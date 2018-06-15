@@ -1,3 +1,5 @@
 .idea
-meta/coverage.out
-meta/meta.coverprofile
+/git/git.coverprofile
+/manifest/manifest.coverprofile
+/node/node.coverprofile
+vendor/
