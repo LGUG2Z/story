@@ -1,100 +1,32 @@
 package manifest_test
 
 import (
-	"fmt"
-
-	"github.com/LGUG2Z/story/manifest"
-	"github.com/LGUG2Z/story/node"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
+	"github.com/LGUG2Z/story/manifest"
 )
 
-type MockRadius struct {
-	Radius []string
-}
-
-type BlastRadiusBuilder struct {
-	mockRadius *MockRadius
-}
-
-func NewBlastRadiusBuilder() *BlastRadiusBuilder {
-	blastRadius := &MockRadius{}
-	b := &BlastRadiusBuilder{mockRadius: blastRadius}
-	return b
-}
-
-func (b *BlastRadiusBuilder) BlastRadius(projects ...string) *BlastRadiusBuilder {
-	for _, project := range projects {
-		b.mockRadius.Radius = append(b.mockRadius.Radius, project)
-	}
-
-	return b
-}
-
-func (b *BlastRadiusBuilder) Build() *MockRadius {
-	return b.mockRadius
-}
-
-func (r *MockRadius) Calculate(fs afero.Fs, metarepo, project string) ([]string, error) {
-	return r.Radius, nil
-}
-
-type StoryBuilder struct {
-	story *manifest.Story
-}
-
-func NewStoryBuilder() *StoryBuilder {
-	story := &manifest.Story{}
-	b := &StoryBuilder{story: story}
-	return b
-}
-
-func (b *StoryBuilder) Name(name string) *StoryBuilder {
-	b.story.Name = name
-	return b
-}
-
-func (b *StoryBuilder) Organisation(organisation string) *StoryBuilder {
-	b.story.Orgranisation = organisation
-	return b
-}
-
-func (b *StoryBuilder) Deployables(status bool, deployables ...string) *StoryBuilder {
-	b.story.Deployables = make(map[string]bool)
-
-	for _, deployable := range deployables {
-		b.story.Deployables[deployable] = status
-	}
-
-	return b
-}
-
-func (b *StoryBuilder) Projects(projects ...string) *StoryBuilder {
-	b.story.Projects = make(map[string]string)
-
-	for _, project := range projects {
-		b.story.Projects[project] = fmt.Sprintf("git+ssh://git@github.com:%s/%s.git", b.story.Orgranisation, project)
-	}
-
-	return b
-}
-
-func (b *StoryBuilder) PackageJSONs(packageJSONs map[string]*node.PackageJSON) *StoryBuilder {
-	b.story.PackageJSONs = packageJSONs
-	return b
-}
-
-func (b *StoryBuilder) BlastRadius(blastRadius map[string][]string) *StoryBuilder {
-	b.story.BlastRadius = blastRadius
-	return b
-}
-
-func (b *StoryBuilder) Build() *manifest.Story {
-	return b.story
-}
-
 var _ = Describe("Meta", func() {
+	Describe("Creating a new story", func() {
+		It("Should create a story using the appropriate data from the meta file", func() {
+			// Given a meta file
+			m := NewMetaBuilder().
+				Orgranisation("test-org").
+				Deployables("one").
+				Build()
+
+			// When I create a story with that meta file as the base
+			s := manifest.NewStory("test-story", m)
+
+			// Then the story should inherit the organisation and the deployables from the meta file
+
+			Expect(s.Name).To(Equal("test-story"))
+			Expect(s.Orgranisation).To(Equal("test-org"))
+			Expect(s.Deployables).To(HaveKeyWithValue("one", false))
+		})
+	})
+
 	Describe("Adding a project", func() {
 		It("Should add the project to the manifest", func() {
 			// Given a story

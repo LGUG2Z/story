@@ -52,10 +52,6 @@ func (s *Story) Write(fs afero.Fs) error {
 	return afero.WriteFile(fs, ".meta", bytes, os.FileMode(0666))
 }
 
-func (s *Story) Set(name string) {
-	s.Name = name
-}
-
 func (s *Story) MapBlastRadiusToDeployables() {
 	for project := range s.Deployables {
 		s.Deployables[project] = false

@@ -56,3 +56,5 @@ func (m *Meta) MoveForStory(fs afero.Fs) error {
 
 	return afero.WriteFile(fs, ".meta.json", bytes, os.FileMode(0666))
 }
+
+
