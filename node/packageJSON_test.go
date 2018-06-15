@@ -100,23 +100,33 @@ var _ = Describe("PackageJSON", func() {
 	Describe("Updating dependency branches", func() {
 		It("Should update only the dependencies of projects in allProjects", func() {
 			// Given a map of all projects and story projects
-			allProjects := make(map[string]string)
-			for _, project := range []string{"one"} {
-				allProjects[project] = ""
-			}
+			projects := []string{"one"}
 
 			// And an unmarshalled package.json file
 			b := packageJSONWithDependencies("one", "two")
 			Expect(json.Unmarshal(b, &p)).To(Succeed())
 
 			// When I update the dependencies to the story branch
-			p.SetPrivateDependencyBranchesToStory(allProjects, "test-story")
+			p.SetPrivateDependencyBranchesToStory("test-story", projects...)
 
 			// Then the project in allProjects should be updated
 			Expect(p.Dependencies["one"]).To(Equal("git+ssh://git@github.com:TestOrg/one.git#test-story"))
 
 			// But the project not in allProjects should not be updated
 			Expect(p.Dependencies["two"]).To(Equal("git+ssh://git@github.com:TestOrg/two.git"))
+		})
+
+		It("Should reset references to removed dependencies to the master branch", func() {
+			// Given a package.json file with a dependency pinned to a story branch
+			b := packageJSONWithDependencies("one", "two")
+			Expect(json.Unmarshal(b, &p)).To(Succeed())
+			p.Dependencies["one"] = "git+ssh://git@github.com:TestOrg/one.git#test-story"
+
+			// When I reset all the modified branches
+			p.ResetPrivateDependencyBranches("one", "test-story",)
+
+			// Then that dependency should point to the master branch
+			Expect(p.Dependencies["one"]).To(Equal("git+ssh://git@github.com:TestOrg/one.git"))
 		})
 
 		It("Should reset all modified dependencies to use the master branch", func() {

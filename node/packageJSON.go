@@ -64,11 +64,9 @@ func (p *PackageJSON) resetPrivateDependencyBranch(dependency, story string) {
 	}
 }
 
-func (p *PackageJSON) ResetPrivateDependencyBranches(toReset, story string, projects ...string) {
-	for range projects {
-		if _, exists := p.Dependencies[toReset]; exists {
-			p.resetPrivateDependencyBranch(toReset, story)
-		}
+func (p *PackageJSON) ResetPrivateDependencyBranches(toReset, story string) {
+	if _, exists := p.Dependencies[toReset]; exists {
+		p.resetPrivateDependencyBranch(toReset, story)
 	}
 }
 
