@@ -1,6 +1,8 @@
 package manifest_test
 
 import (
+	"os"
+
 	"github.com/LGUG2Z/story/manifest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -20,7 +22,6 @@ var _ = Describe("Meta", func() {
 			s := manifest.NewStory("test-story", m)
 
 			// Then the story should inherit the organisation and the deployables from the meta file
-
 			Expect(s.Name).To(Equal("test-story"))
 			Expect(s.Orgranisation).To(Equal("test-org"))
 			Expect(s.Deployables).To(HaveKeyWithValue("one", false))
@@ -30,12 +31,14 @@ var _ = Describe("Meta", func() {
 	Describe("Writing a story to a file", func() {
 		It("Should marshal the object with indentation and write to a .meta file", func() {
 			// Given a story object
+			var br []string
+
 			s := NewStoryBuilder().
 				Name("test-story").
 				Organisation("test-org").
 				Projects("one").
 				Deployables(true, "one").
-				BlastRadius(map[string][]string{"one": {}}).
+				BlastRadius(map[string][]string{"one": br}).
 				Build()
 
 			fs := afero.NewMemMapFs()
@@ -54,7 +57,7 @@ var _ = Describe("Meta", func() {
 			actual := string(bytes)
 			expected := `{
   "blast-radius": {
-    "one": []
+    "one": null
   },
   "deployables": {
     "one": true
@@ -66,6 +69,59 @@ var _ = Describe("Meta", func() {
   }
 }`
 			Expect(actual).To(Equal(expected))
+		})
+	})
+
+	Describe("Loading a story from a file", func() {
+		It("Should load a valid story", func() {
+			// Given a valid story file on an fs
+			fs := afero.NewMemMapFs()
+			b := []byte(`{
+  "blast-radius": {
+    "one": null
+  },
+  "deployables": {
+    "one": true
+  },
+  "story": "test-story",
+  "organisation": "test-org",
+  "projects": {
+    "one": "git@github.com:test-org/one.git"
+  }
+}`)
+			Expect(afero.WriteFile(fs, ".meta", b, os.FileMode(0666))).To(Succeed())
+
+			// When I try to load that story
+			_, err := manifest.LoadStory(fs)
+
+			// Then the file should be unmarshalled into an object without error
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("Should not load an invalid story", func() {
+			// Given a valid story file on an fs
+			fs := afero.NewMemMapFs()
+			b := []byte(`{
+  "blast-radius": {
+    "one": null
+  },
+  "deployables": {
+    "one": true
+  },
+  "story": "test-story",
+  "organisation": "test-org",
+  "projects": {
+    "one": "git@github.com:test-org/one.git"
+  },
+}`)
+			Expect(afero.WriteFile(fs, ".meta", b, os.FileMode(0666))).To(Succeed())
+
+			// When I try to load that story
+			_, err := manifest.LoadStory(fs)
+
+			// Then the file should be unmarshalled into an object without error
+			Expect(err).To(HaveOccurred())
+
 		})
 	})
 
@@ -85,6 +141,20 @@ var _ = Describe("Meta", func() {
 	})
 
 	Describe("Removing a project", func() {
+		It("Should return early if there are no projects", func() {
+			// Given a story with a project
+			s := NewStoryBuilder().
+				Name("test-story").
+				Organisation("test-org").
+				Build()
+
+			// When I remove the project from that story
+			s.RemoveFromManifest("test-project")
+
+			// It should update the story
+			Expect(s.Projects).To(BeNil())
+		})
+
 		It("Should remove the project from the manifest", func() {
 			// Given a story with a project
 			s := NewStoryBuilder().
