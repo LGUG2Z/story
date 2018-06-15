@@ -15,7 +15,7 @@ var fs afero.Fs
 var isStory bool
 var trunk string
 
-func Execute(args ...string) error {
+func App() *cli.App {
 	app := cli.NewApp()
 	app.Name = "story"
 	app.Usage = "A workflow tool for implementing stories across a meta-repo"
@@ -54,7 +54,7 @@ func Execute(args ...string) error {
 		RemoveCmd(),
 	}
 
-	return app.Run(args)
+	return app
 }
 
 func printGitOutput(output, project string) {
