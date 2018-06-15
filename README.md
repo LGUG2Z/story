@@ -1,5 +1,6 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/lgug2z/story)](https://goreportcard.com/report/github.com/lgug2z/story)
 [![Maintainability](https://api.codeclimate.com/v1/badges/ed8cb042219f695c8436/maintainability)](https://codeclimate.com/github/LGUG2Z/story/maintainability)
+[![Build Status](https://travis-ci.org/LGUG2Z/story.svg?branch=master)](https://travis-ci.org/LGUG2Z/story)
 # story
 `story` is workflow tool for implementing stories across multiple `node` projects in a meta-repo
 powered by [meta](https://github.com/mateodelnorte/meta).
