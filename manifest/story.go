@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"os"
 
+	"sort"
+
 	"github.com/LGUG2Z/blastradius/blastradius"
 	"github.com/LGUG2Z/story/node"
 	"github.com/spf13/afero"
@@ -90,6 +92,8 @@ func (s *Story) GetDeployables() string {
 			artifacts = append(artifacts, project)
 		}
 	}
+
+	sort.Strings(artifacts)
 
 	return strings.Join(artifacts, " ")
 }

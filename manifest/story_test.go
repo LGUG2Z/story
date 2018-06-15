@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/afero"
 )
 
-var _ = Describe("Meta", func() {
+var _ = Describe("Story", func() {
 	Describe("Creating a new story", func() {
 		It("Should create a story using the appropriate data from the meta file", func() {
 			// Given a meta file

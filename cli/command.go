@@ -258,7 +258,7 @@ func RemoveCmd() cli.Command {
 				}
 
 				for _, toReset := range c.Args() {
-					p.ResetPrivateDependencyBranches(toReset, story.Name, projectList...)
+					p.ResetPrivateDependencyBranches(toReset, story.Name)
 					p.Write(fs, project)
 				}
 			}
