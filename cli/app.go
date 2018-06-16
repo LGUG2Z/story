@@ -19,7 +19,7 @@ func App() *cli.App {
 	app := cli.NewApp()
 
 	app.Name = "story"
-	app.Usage = "A workflow tool for implementing stories across a meta-repo"
+	app.Usage = "A workflow tool for implementing stories across a node meta-repo"
 	app.EnableBashCompletion = true
 	app.Compiled = time.Now()
 	app.Authors = []cli.Author{{

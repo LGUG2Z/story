@@ -13,7 +13,8 @@ import (
 
 func CreateCmd(fs afero.Fs) cli.Command {
 	return cli.Command{
-		Name: "create",
+		Name:  "create",
+		Usage: "Creates a new story",
 		Action: func(c *cli.Context) error {
 			if isStory {
 				return fmt.Errorf("already working on a story")
@@ -49,7 +50,8 @@ func CreateCmd(fs afero.Fs) cli.Command {
 
 func LoadCmd(fs afero.Fs) cli.Command {
 	return cli.Command{
-		Name: "load",
+		Name:  "load",
+		Usage: "Loads an existing story",
 		Action: func(c *cli.Context) error {
 			if isStory {
 				return fmt.Errorf("already working on a story")
@@ -88,7 +90,8 @@ func LoadCmd(fs afero.Fs) cli.Command {
 
 func ResetCmd(fs afero.Fs) cli.Command {
 	return cli.Command{
-		Name: "reset",
+		Name:  "reset",
+		Usage: "Resets all story branches to trunk branches",
 		Action: func(c *cli.Context) error {
 			if !isStory {
 				return fmt.Errorf("not working on a story")
@@ -127,6 +130,7 @@ func ListCmd(fs afero.Fs) cli.Command {
 	return cli.Command{
 		Name:      "list",
 		ShortName: "ls",
+		Usage:     "Shows a list of projects added to the current story",
 		Action: func(c *cli.Context) error {
 			if !isStory {
 				return fmt.Errorf("not working on a story")
@@ -154,6 +158,7 @@ func ArtifactsCmd(fs afero.Fs) cli.Command {
 	return cli.Command{
 		Name:      "artifacts",
 		ShortName: "art",
+		Usage:     "Shows a list of artifacts to be built and deployed for the current story",
 		Action: func(c *cli.Context) error {
 			if !isStory {
 				return fmt.Errorf("not working on a story")
@@ -183,6 +188,7 @@ func AddCmd(fs afero.Fs) cli.Command {
 	return cli.Command{
 		Name:      "add",
 		ShortName: "a",
+		Usage:     "Adds a project to the current story",
 		Action: func(c *cli.Context) error {
 			if !isStory {
 				return fmt.Errorf("not working on a story")
@@ -261,6 +267,7 @@ func RemoveCmd(fs afero.Fs) cli.Command {
 	return cli.Command{
 		Name:      "remove",
 		ShortName: "rm",
+		Usage:     "Removes a project from the current story",
 		Action: func(c *cli.Context) error {
 			if !isStory {
 				return fmt.Errorf("not working on a story")
