@@ -11,12 +11,13 @@ import (
 	"github.com/urfave/cli"
 )
 
-var fs afero.Fs
 var isStory bool
 var trunk string
 
 func App() *cli.App {
+	fs := afero.NewOsFs()
 	app := cli.NewApp()
+
 	app.Name = "story"
 	app.Usage = "A workflow tool for implementing stories across a meta-repo"
 	app.EnableBashCompletion = true
@@ -34,7 +35,6 @@ func App() *cli.App {
 	}
 
 	app.Before = func(c *cli.Context) error {
-		fs = afero.NewOsFs()
 		trunk = c.String("trunk")
 		branch, err := git.GetCurrentBranch(fs, ".")
 		if err != nil {
@@ -47,13 +47,13 @@ func App() *cli.App {
 	}
 
 	app.Commands = []cli.Command{
-		CreateCmd(),
-		LoadCmd(),
-		ResetCmd(),
-		AddCmd(),
-		RemoveCmd(),
-		ListCmd(),
-		ArtifactsCmd(),
+		CreateCmd(fs),
+		LoadCmd(fs),
+		ResetCmd(fs),
+		AddCmd(fs),
+		RemoveCmd(fs),
+		ListCmd(fs),
+		ArtifactsCmd(fs),
 	}
 
 	return app

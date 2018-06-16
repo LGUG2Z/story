@@ -7,10 +7,11 @@ import (
 	"github.com/LGUG2Z/story/git"
 	"github.com/LGUG2Z/story/manifest"
 	"github.com/LGUG2Z/story/node"
+	"github.com/spf13/afero"
 	"github.com/urfave/cli"
 )
 
-func CreateCmd() cli.Command {
+func CreateCmd(fs afero.Fs) cli.Command {
 	return cli.Command{
 		Name: "create",
 		Action: func(c *cli.Context) error {
@@ -46,7 +47,7 @@ func CreateCmd() cli.Command {
 	}
 }
 
-func LoadCmd() cli.Command {
+func LoadCmd(fs afero.Fs) cli.Command {
 	return cli.Command{
 		Name: "load",
 		Action: func(c *cli.Context) error {
@@ -85,7 +86,7 @@ func LoadCmd() cli.Command {
 	}
 }
 
-func ResetCmd() cli.Command {
+func ResetCmd(fs afero.Fs) cli.Command {
 	return cli.Command{
 		Name: "reset",
 		Action: func(c *cli.Context) error {
@@ -122,7 +123,7 @@ func ResetCmd() cli.Command {
 	}
 }
 
-func ListCmd() cli.Command {
+func ListCmd(fs afero.Fs) cli.Command {
 	return cli.Command{
 		Name:      "list",
 		ShortName: "ls",
@@ -149,7 +150,7 @@ func ListCmd() cli.Command {
 	}
 }
 
-func ArtifactsCmd() cli.Command {
+func ArtifactsCmd(fs afero.Fs) cli.Command {
 	return cli.Command{
 		Name:      "artifacts",
 		ShortName: "art",
@@ -178,7 +179,7 @@ func ArtifactsCmd() cli.Command {
 	}
 }
 
-func AddCmd() cli.Command {
+func AddCmd(fs afero.Fs) cli.Command {
 	return cli.Command{
 		Name:      "add",
 		ShortName: "a",
@@ -256,7 +257,7 @@ func AddCmd() cli.Command {
 	}
 }
 
-func RemoveCmd() cli.Command {
+func RemoveCmd(fs afero.Fs) cli.Command {
 	return cli.Command{
 		Name:      "remove",
 		ShortName: "rm",
