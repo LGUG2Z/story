@@ -343,6 +343,7 @@ func CommitCmd(fs afero.Fs) cli.Command {
 	return cli.Command{
 		Name:      "commit",
 		ShortName: "co",
+		Usage:     "Commits code across the current story",
 		Flags: []cli.Flag{
 			cli.StringFlag{Name: "message, m", Usage: "Commit message"},
 		},
