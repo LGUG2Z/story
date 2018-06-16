@@ -3,6 +3,8 @@ package cli
 import (
 	"fmt"
 
+	"sort"
+
 	"github.com/LGUG2Z/blastradius/blastradius"
 	"github.com/LGUG2Z/story/git"
 	"github.com/LGUG2Z/story/manifest"
@@ -331,5 +333,59 @@ func RemoveCmd(fs afero.Fs) cli.Command {
 
 			return nil
 		},
+	}
+}
+
+func CommitCmd(fs afero.Fs) cli.Command {
+	return cli.Command{
+		Name:      "commit",
+		ShortName: "co",
+		Flags: []cli.Flag{
+			cli.StringFlag{Name: "message, m", Usage: "Commit message"},
+		},
+		Action: cli.ActionFunc(func(c *cli.Context) error {
+			if !isStory {
+				return fmt.Errorf("not working on a story")
+			}
+
+			if c.Args().Present() {
+				return fmt.Errorf("this command takes no arguments")
+			}
+
+			story, err := manifest.LoadStory(fs)
+			if err != nil {
+				return err
+			}
+
+			messages := []string{c.String("message")}
+			for project := range story.Projects {
+				output, err := git.Commit(git.CommitOpts{Project: project, Messages: messages})
+				if err != nil {
+					return err
+				}
+
+				printGitOutput(output, project)
+			}
+
+			var hashMessages []string
+
+			hashes, err := story.GetCommitHashes(fs)
+			for project, hash := range hashes {
+				commitUrl := fmt.Sprintf("https://github.com/%s/%s/commit/%s", story.Orgranisation, project, hash)
+				hashMessages = append(hashMessages, commitUrl)
+			}
+
+			sort.Strings(hashMessages)
+			messages = append(messages, hashMessages...)
+
+			output, err := git.Commit(git.CommitOpts{Messages: messages})
+			if err != nil {
+				return err
+			}
+
+			printGitOutput(output, "metarepo")
+
+			return nil
+		}),
 	}
 }

@@ -77,6 +77,21 @@ func (s *Story) MapBlastRadiusToArtifacts() {
 	}
 }
 
+// TODO: add test
+func (s *Story) GetCommitHashes(fs afero.Fs) (map[string]string, error) {
+	hashMap := make(map[string]string)
+	for project := range s.Projects {
+		bytes, err := afero.ReadFile(fs, fmt.Sprintf("%s/.git/refs/heads/%s", project, s.Name))
+		if err != nil {
+			return nil, err
+		}
+
+		hashMap[project] = string(bytes)
+	}
+
+	return hashMap, nil
+}
+
 func (s *Story) CalculateBlastRadiusForProject(fs afero.Fs, blaster blastradius.RadiusCalculator, project string) error {
 	if s.BlastRadius == nil {
 		s.BlastRadius = make(map[string][]string)

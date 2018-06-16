@@ -54,6 +54,7 @@ func App() *cli.App {
 		RemoveCmd(fs),
 		ListCmd(fs),
 		ArtifactsCmd(fs),
+		CommitCmd(fs),
 	}
 
 	return app
