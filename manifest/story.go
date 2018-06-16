@@ -67,6 +67,14 @@ func (s *Story) MapBlastRadiusToArtifacts() {
 
 		}
 	}
+
+	// Ensure relevant projects are marked as artifacts,
+	// even if not in the blast radius of others
+	for project := range s.Projects {
+		if _, exists := s.Artifacts[project]; exists {
+			s.Artifacts[project] = true
+		}
+	}
 }
 
 func (s *Story) CalculateBlastRadiusForProject(fs afero.Fs, blaster blastradius.RadiusCalculator, project string) error {

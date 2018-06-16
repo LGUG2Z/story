@@ -215,8 +215,8 @@ var _ = Describe("Story", func() {
 
 			s := NewStoryBuilder().
 				Name("test-story").
-				Projects("four", "five").
-				Artifacts(false, "one", "two", "three").
+				Projects("four", "five", "nine").
+				Artifacts(false, "one", "two", "three", "nine").
 				BlastRadius(b).
 				Build()
 
@@ -226,12 +226,12 @@ var _ = Describe("Story", func() {
 			// Then the expected artifacts should be marked true
 			Expect(s.Artifacts).To(HaveKeyWithValue("one", true))
 			Expect(s.Artifacts).To(HaveKeyWithValue("two", true))
+			Expect(s.Artifacts).To(HaveKeyWithValue("nine", true))
 
 			// But those not within the blast radius should remain false
 			Expect(s.Artifacts).To(HaveKeyWithValue("three", false))
 
 			// And no new projects should be added to the artifacts map
-			Expect(s.Artifacts).ToNot(HaveKey("nine"))
 			Expect(s.Artifacts).ToNot(HaveKey("ten"))
 		})
 	})
