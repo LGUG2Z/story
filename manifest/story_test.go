@@ -15,16 +15,16 @@ var _ = Describe("Story", func() {
 			// Given a meta file
 			m := NewMetaBuilder().
 				Orgranisation("test-org").
-				Deployables("one").
+				Artifacts("one").
 				Build()
 
 			// When I create a story with that meta file as the base
 			s := manifest.NewStory("test-story", m)
 
-			// Then the story should inherit the organisation and the deployables from the meta file
+			// Then the story should inherit the organisation and the artifacts from the meta file
 			Expect(s.Name).To(Equal("test-story"))
 			Expect(s.Orgranisation).To(Equal("test-org"))
-			Expect(s.Deployables).To(HaveKeyWithValue("one", false))
+			Expect(s.Artifacts).To(HaveKeyWithValue("one", false))
 		})
 	})
 
@@ -37,7 +37,7 @@ var _ = Describe("Story", func() {
 				Name("test-story").
 				Organisation("test-org").
 				Projects("one").
-				Deployables(true, "one").
+				Artifacts(true, "one").
 				BlastRadius(map[string][]string{"one": br}).
 				Build()
 
@@ -59,7 +59,7 @@ var _ = Describe("Story", func() {
   "blast-radius": {
     "one": null
   },
-  "deployables": {
+  "artifacts": {
     "one": true
   },
   "story": "test-story",
@@ -80,7 +80,7 @@ var _ = Describe("Story", func() {
   "blast-radius": {
     "one": null
   },
-  "deployables": {
+  "artifacts": {
     "one": true
   },
   "story": "test-story",
@@ -105,7 +105,7 @@ var _ = Describe("Story", func() {
   "blast-radius": {
     "one": null
   },
-  "deployables": {
+  "artifacts": {
     "one": true
   },
   "story": "test-story",
@@ -171,16 +171,16 @@ var _ = Describe("Story", func() {
 		})
 	})
 
-	Describe("Listing deployable artifacts", func() {
+	Describe("Listing artifacts", func() {
 		It("Should provide a space separated string of artifacts", func() {
-			// Given a story with a project with deployables
+			// Given a story with a project with artifacts
 			s := NewStoryBuilder().
 				Name("test-story").
-				Deployables(true, "one", "three").
+				Artifacts(true, "one", "three").
 				Build()
 
-			// When I get the deployables
-			actual := s.GetDeployables()
+			// When I get the artifacts
+			actual := s.GetArtifacts()
 
 			// It should produce a space separated string
 			Expect(actual).To(Equal("one three"))
@@ -207,8 +207,8 @@ var _ = Describe("Story", func() {
 			Expect(s.BlastRadius).To(HaveKeyWithValue("one", []string{"three", "four", "five"}))
 		})
 
-		It("Should map the blast radius of a story to deployable artifacts", func() {
-			// Given a story with a story, false deployables and a blast radius
+		It("Should map the blast radius of a story to artifacts", func() {
+			// Given a story with a story, false artifacts and a blast radius
 			b := make(map[string][]string)
 			b["four"] = []string{"one", "nine"}
 			b["five"] = []string{"two", "ten"}
@@ -216,23 +216,23 @@ var _ = Describe("Story", func() {
 			s := NewStoryBuilder().
 				Name("test-story").
 				Projects("four", "five").
-				Deployables(false, "one", "two", "three").
+				Artifacts(false, "one", "two", "three").
 				BlastRadius(b).
 				Build()
 
-			// When I map the blast radius to deployable artifacts
-			s.MapBlastRadiusToDeployables()
+			// When I map the blast radius to artifacts
+			s.MapBlastRadiusToArtifacts()
 
-			// Then the expected deployable artifacts should be marked true
-			Expect(s.Deployables).To(HaveKeyWithValue("one", true))
-			Expect(s.Deployables).To(HaveKeyWithValue("two", true))
+			// Then the expected artifacts should be marked true
+			Expect(s.Artifacts).To(HaveKeyWithValue("one", true))
+			Expect(s.Artifacts).To(HaveKeyWithValue("two", true))
 
 			// But those not within the blast radius should remain false
-			Expect(s.Deployables).To(HaveKeyWithValue("three", false))
+			Expect(s.Artifacts).To(HaveKeyWithValue("three", false))
 
-			// And no new projects should be added to the deployable set
-			Expect(s.Deployables).ToNot(HaveKey("nine"))
-			Expect(s.Deployables).ToNot(HaveKey("ten"))
+			// And no new projects should be added to the artifacts map
+			Expect(s.Artifacts).ToNot(HaveKey("nine"))
+			Expect(s.Artifacts).ToNot(HaveKey("ten"))
 		})
 	})
 })

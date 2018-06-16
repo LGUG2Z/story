@@ -58,11 +58,11 @@ func (b *StoryBuilder) Organisation(organisation string) *StoryBuilder {
 	return b
 }
 
-func (b *StoryBuilder) Deployables(status bool, deployables ...string) *StoryBuilder {
-	b.story.Deployables = make(map[string]bool)
+func (b *StoryBuilder) Artifacts(status bool, artifacts ...string) *StoryBuilder {
+	b.story.Artifacts = make(map[string]bool)
 
-	for _, deployable := range deployables {
-		b.story.Deployables[deployable] = status
+	for _, artifact := range artifacts {
+		b.story.Artifacts[artifact] = status
 	}
 
 	return b
@@ -102,11 +102,11 @@ func NewMetaBuilder() *MetaBuilder {
 	return b
 }
 
-func (b *MetaBuilder) Deployables(deployables ...string) *MetaBuilder {
-	b.meta.Deployables = make(map[string]bool)
+func (b *MetaBuilder) Artifacts(artifacts ...string) *MetaBuilder {
+	b.meta.Artifacts = make(map[string]bool)
 
-	for _, deployable := range deployables {
-		b.meta.Deployables[deployable] = false
+	for _, artifact := range artifacts {
+		b.meta.Artifacts[artifact] = false
 	}
 
 	return b

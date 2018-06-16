@@ -9,7 +9,7 @@ import (
 )
 
 type Meta struct {
-	Deployables   map[string]bool   `json:"deployables,omitempty"`
+	Artifacts     map[string]bool   `json:"artifacts,omitempty"`
 	Orgranisation string            `json:"organisation,omitempty"`
 	Projects      map[string]string `json:"projects,omitempty"`
 }

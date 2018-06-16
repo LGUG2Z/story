@@ -53,7 +53,7 @@ func App() *cli.App {
 		AddCmd(),
 		RemoveCmd(),
 		ListCmd(),
-		DeployablesCmd(),
+		ArtifactsCmd(),
 	}
 
 	return app

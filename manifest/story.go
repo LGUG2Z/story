@@ -16,7 +16,7 @@ import (
 
 type Story struct {
 	BlastRadius   map[string][]string          `json:"blast-radius,omitempty"`
-	Deployables   map[string]bool              `json:"deployables,omitempty"`
+	Artifacts     map[string]bool              `json:"artifacts,omitempty"`
 	Name          string                       `json:"story,omitempty"`
 	Orgranisation string                       `json:"organisation"`
 	PackageJSONs  map[string]*node.PackageJSON `json:"-"`
@@ -26,7 +26,7 @@ type Story struct {
 func NewStory(name string, meta *Meta) *Story {
 	return &Story{
 		Name:          name,
-		Deployables:   meta.Deployables,
+		Artifacts:     meta.Artifacts,
 		Orgranisation: meta.Orgranisation,
 	}
 }
@@ -54,15 +54,15 @@ func (s *Story) Write(fs afero.Fs) error {
 	return afero.WriteFile(fs, ".meta", bytes, os.FileMode(0666))
 }
 
-func (s *Story) MapBlastRadiusToDeployables() {
-	for project := range s.Deployables {
-		s.Deployables[project] = false
+func (s *Story) MapBlastRadiusToArtifacts() {
+	for project := range s.Artifacts {
+		s.Artifacts[project] = false
 	}
 
 	for _, projects := range s.BlastRadius {
 		for _, project := range projects {
-			if _, exists := s.Deployables[project]; exists {
-				s.Deployables[project] = true
+			if _, exists := s.Artifacts[project]; exists {
+				s.Artifacts[project] = true
 			}
 
 		}
@@ -84,11 +84,11 @@ func (s *Story) CalculateBlastRadiusForProject(fs afero.Fs, blaster blastradius.
 	return nil
 }
 
-func (s *Story) GetDeployables() string {
+func (s *Story) GetArtifacts() string {
 	var artifacts []string
 
-	for project := range s.Deployables {
-		if s.Deployables[project] {
+	for project := range s.Artifacts {
+		if s.Artifacts[project] {
 			artifacts = append(artifacts, project)
 		}
 	}

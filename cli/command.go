@@ -124,8 +124,8 @@ func ResetCmd() cli.Command {
 
 func ListCmd() cli.Command {
 	return cli.Command{
-		Name:    "list",
-		Aliases: []string{"ls"},
+		Name:      "list",
+		ShortName: "ls",
 		Action: func(c *cli.Context) error {
 			if !isStory {
 				return fmt.Errorf("not working on a story")
@@ -149,9 +149,10 @@ func ListCmd() cli.Command {
 	}
 }
 
-func DeployablesCmd() cli.Command {
+func ArtifactsCmd() cli.Command {
 	return cli.Command{
-		Name: "deployables",
+		Name:      "artifacts",
+		ShortName: "art",
 		Action: func(c *cli.Context) error {
 			if !isStory {
 				return fmt.Errorf("not working on a story")
@@ -166,8 +167,8 @@ func DeployablesCmd() cli.Command {
 				return err
 			}
 
-			for project := range story.Deployables {
-				if story.Deployables[project] {
+			for project := range story.Artifacts {
+				if story.Artifacts[project] {
 					fmt.Println(project)
 				}
 			}
@@ -179,8 +180,8 @@ func DeployablesCmd() cli.Command {
 
 func AddCmd() cli.Command {
 	return cli.Command{
-		Name:    "add",
-		Aliases: []string{"a"},
+		Name:      "add",
+		ShortName: "a",
 		Action: func(c *cli.Context) error {
 			if !isStory {
 				return fmt.Errorf("not working on a story")
@@ -226,8 +227,8 @@ func AddCmd() cli.Command {
 				printGitOutput(output, project)
 			}
 
-			// Use the Blast Radius to update deployables
-			story.MapBlastRadiusToDeployables()
+			// Use the Blast Radius to update artifacts
+			story.MapBlastRadiusToArtifacts()
 
 			// Update the manifest
 			if err := story.Write(fs); err != nil {
@@ -257,8 +258,8 @@ func AddCmd() cli.Command {
 
 func RemoveCmd() cli.Command {
 	return cli.Command{
-		Name:    "remove",
-		Aliases: []string{"rm"},
+		Name:      "remove",
+		ShortName: "rm",
 		Action: func(c *cli.Context) error {
 			if !isStory {
 				return fmt.Errorf("not working on a story")
@@ -294,8 +295,8 @@ func RemoveCmd() cli.Command {
 				printGitOutput(output, project)
 			}
 
-			// Use the Blast Radius to update deployables
-			story.MapBlastRadiusToDeployables()
+			// Use the Blast Radius to update artifacts
+			story.MapBlastRadiusToArtifacts()
 
 			// Update the manifest
 			if err := story.Write(fs); err != nil {

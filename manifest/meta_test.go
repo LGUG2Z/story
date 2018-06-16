@@ -15,7 +15,7 @@ var _ = Describe("Meta", func() {
 		It("Should move the .meta file to a .meta.json file", func() {
 			// Given a meta file on the fs
 			b := []byte(`{
-  "deployables": {
+  "artifacts": {
     "one": false
   },
   "organisation": "test-org",
@@ -55,7 +55,7 @@ var _ = Describe("Meta", func() {
 		It("Should load the file from the proper location and unmarshal it into an object", func() {
 			// Given a .meta.json file on the fs
 			b := []byte(`{
-  "deployables": {
+  "artifacts": {
     "one": false
   },
   "organisation": "test-org",
