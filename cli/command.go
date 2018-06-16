@@ -5,6 +5,9 @@ import (
 
 	"sort"
 
+	"os"
+	"strings"
+
 	"github.com/LGUG2Z/blastradius/blastradius"
 	"github.com/LGUG2Z/story/git"
 	"github.com/LGUG2Z/story/manifest"
@@ -368,17 +371,32 @@ func CommitCmd(fs afero.Fs) cli.Command {
 			}
 
 			var hashMessages []string
+			var storyHashes []string
 
 			hashes, err := story.GetCommitHashes(fs)
 			for project, hash := range hashes {
 				commitUrl := fmt.Sprintf("https://github.com/%s/%s/commit/%s", story.Orgranisation, project, hash)
+				projectHash := fmt.Sprintf("%s: %s", project, hash)
 				hashMessages = append(hashMessages, commitUrl)
+				storyHashes = append(storyHashes, projectHash)
 			}
 
 			sort.Strings(hashMessages)
-			messages = append(messages, hashMessages...)
+			sort.Strings(storyHashes)
 
-			output, err := git.Commit(git.CommitOpts{Messages: messages})
+			b := []byte(strings.Join(storyHashes, "\n"))
+			if err := afero.WriteFile(fs, ".storyhash", b, os.FileMode(0666)); err != nil {
+				return err
+			}
+
+			output, err := git.Add(git.AddOpts{Files: []string{".storyhash"}})
+			if err != nil {
+				return err
+			}
+
+			messages = append(messages, strings.Join(hashMessages, "\n"))
+
+			output, err = git.Commit(git.CommitOpts{Messages: messages})
 			if err != nil {
 				return err
 			}

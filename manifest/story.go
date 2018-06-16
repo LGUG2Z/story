@@ -86,7 +86,7 @@ func (s *Story) GetCommitHashes(fs afero.Fs) (map[string]string, error) {
 			return nil, err
 		}
 
-		hashMap[project] = string(bytes)
+		hashMap[project] = strings.TrimSpace(string(bytes))
 	}
 
 	return hashMap, nil
