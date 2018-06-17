@@ -368,4 +368,67 @@ var _ = Describe("App", func() {
 			Expect(err).To(Equal(cli.ErrNotWorkingOnAStory))
 		})
 	})
+
+	Describe("Commit", func() {
+		It("Should commit in changed repos, and commit a storyhash in the metarepo", func() {
+			// Given an initialised metarepo with projects and a story with a project added
+			Expect(fs.MkdirAll("one", os.FileMode(0700))).To(Succeed())
+			p := node.PackageJSON{}
+			b, err := json.Marshal(p)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(afero.WriteFile(fs, "one/package.json", b, os.FileMode(0666))).To(Succeed())
+
+			command := exec.Command("git", "init")
+			command.Dir = "one"
+			_, err = command.CombinedOutput()
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = git.Add(git.AddOpts{Project: "one", Files: []string{"package.json"}})
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = git.Commit(git.CommitOpts{Project: "one", Messages: []string{"initial commit"}})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(cli.App().Run([]string{"story", "create", "test-story"})).To(Succeed())
+			Expect(cli.App().Run([]string{"story", "add", "one"})).To(Succeed())
+
+			// When I make a story commit
+			err = cli.App().Run([]string{"story", "commit", "-m", "test commit"})
+			Expect(err).ToNot(HaveOccurred())
+
+			// Then I should have made a commit on the metarepo
+			headsAreEqual, err := git.HeadsAreEqual(fs, ".", "master", "test-story")
+			Expect(headsAreEqual).To(BeFalse())
+
+			// And there should be a .storyhash file
+			exists, err := afero.Exists(fs, ".storyhash")
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(exists).To(BeTrue())
+		})
+
+		It("Should return an error if extra arguments are given", func() {
+			// Given an initialised metarepo with a story
+			Expect(cli.App().Run([]string{"story", "create", "test-story"})).To(Succeed())
+
+			// When I try to make a story commit
+			err := cli.App().Run([]string{"story", "commit", "test-story", "-m", "initial"})
+
+			// Then it returns an error
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(Equal(cli.ErrCommandTakesNoArguments))
+		})
+
+		It("Should return an error if not working on a story", func() {
+			// Given an initialised metarepo not on a story
+
+			// When I try to make a story commit
+			err := cli.App().Run([]string{"story", "commit", "-m", "initial"})
+
+			// Then it returns an error
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(Equal(cli.ErrNotWorkingOnAStory))
+		})
+
+	})
 })
