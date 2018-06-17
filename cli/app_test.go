@@ -1,12 +1,13 @@
 package cli_test
 
 import (
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"os"
+
 	"github.com/LGUG2Z/story/cli"
 	"github.com/LGUG2Z/story/git"
 	"github.com/LGUG2Z/story/manifest"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("App", func() {
@@ -72,6 +73,51 @@ var _ = Describe("App", func() {
 
 			// When I try to create another story
 			err := cli.App().Run([]string{"story", "create", "test-story"})
+			Expect(err).To(HaveOccurred())
+
+			// Then an error is returned
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(Equal(cli.ErrAlreadyWorkingOnAStory))
+		})
+	})
+
+	Describe("Load", func() {
+		It("Should load the story branches", func() {
+			// Given an initialised metarepo with a story which is then reset
+			Expect(cli.App().Run([]string{"story", "create", "test-story"})).To(Succeed())
+			_, err := git.Add(git.AddOpts{Files: []string{".meta", ".meta.json"}})
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = git.Commit(git.CommitOpts{Messages: []string{"story start"}})
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = git.CheckoutBranch(git.CheckoutBranchOpts{Branch: "master"})
+			Expect(err).NotTo(HaveOccurred())
+
+			// When I load the story
+			err = cli.App().Run([]string{"story", "load", "test-story"})
+
+			// Then it loads without error
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("Should return an error if on trunk and a story name isn't supplied", func() {
+			// Given an initialised metarepo
+
+			// When I run the load command
+			err := cli.App().Run([]string{"story", "load"})
+
+			// Then an error is returned
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(Equal(cli.ErrCommandRequiresAnArgument))
+		})
+
+		It("Should return an error if already working on a story", func() {
+			// Given an initialised metarepo with a story
+			Expect(cli.App().Run([]string{"story", "create", "test-story"})).To(Succeed())
+
+			// When I try to load another story
+			err := cli.App().Run([]string{"story", "load", "test-story"})
 			Expect(err).To(HaveOccurred())
 
 			// Then an error is returned

@@ -16,7 +16,6 @@ import (
 	"github.com/urfave/cli"
 )
 
-
 var ErrCommandRequiresAnArgument = fmt.Errorf("this command requires an argument")
 var ErrAlreadyWorkingOnAStory = fmt.Errorf("already working on a story")
 

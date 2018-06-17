@@ -5,13 +5,14 @@ import (
 
 	"encoding/json"
 	"fmt"
+	"os"
+	"os/exec"
+
 	"github.com/LGUG2Z/story/git"
 	"github.com/LGUG2Z/story/manifest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
-	"os"
-	"os/exec"
 )
 
 var fs afero.Fs
