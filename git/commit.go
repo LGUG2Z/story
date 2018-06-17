@@ -11,7 +11,7 @@ type CommitOpts struct {
 }
 
 func hasStagedChanges(project string) (bool, error) {
-	command := exec.Command("git", "diff", "--cached")
+	command := exec.Command("git", "diff", "--cached", "--name-only")
 	if project != "" {
 		command.Dir = project
 	}
