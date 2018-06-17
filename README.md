@@ -2,179 +2,125 @@
 [![Maintainability](https://api.codeclimate.com/v1/badges/ed8cb042219f695c8436/maintainability)](https://codeclimate.com/github/LGUG2Z/story/maintainability)
 [![Test Coverage](https://api.codeclimate.com/v1/badges/ed8cb042219f695c8436/test_coverage)](https://codeclimate.com/github/LGUG2Z/story/test_coverage)
 [![Build Status](https://travis-ci.org/LGUG2Z/story.svg?branch=master)](https://travis-ci.org/LGUG2Z/story)
-# story
-`story` is workflow tool for implementing stories across multiple `node` projects in a meta-repo
-powered by [meta](https://github.com/mateodelnorte/meta).
 
-## Overview
-[meta](https://github.com/mateodelnorte/meta) is a great tool, but it gets messy to handle and slow
-when dealing with a large number of projects in a meta-repo. Enter `story`, which allows you to
-generate and manage subsets of your meta-repo on a per-story basis to allow for a faster and more
-atomic development workflow that plays nicely with containerised builds and deployments.
+- [Overview](#overview)
+- [The .meta File](#the-meta-file)
+- [Commands](#commands)
+  * [Create](#create)
+  * [Load](#load)
+  * [Reset](#reset)
+  * [List](#list)
+  * [Artifacts](#artifacts)
+  * [Add](#add)
+  * [Remove](#remove)
+  * [Commit](#commit)
 
-## Walkthrough
+# Overview
+`story` works as a layer on top of [meta](https://github.com/mateodelnorte/meta) to aid development, continuous integration,
+testing, container building and deployments when working with meta-repos containing a large number of inter-dependent
+`node` projects.
 
-Given a meta-repo with the following projects:
-```
-├── service-1
-├── service-2
-├── service-3
-├── library-1
-├── library-2
-└── library-3
-```
+# The .meta File
+There are two types of `.meta` files used by `story`, which are both supersets of the `.meta` file used by
+ [meta](https://github.com/mateodelnorte/meta):
 
-And some example `package.json` files within them:
-```json
-// service-1/package.json
-{ 
-  "dependencies": {
-    "library-1": "git+ssh://git@github.com:SomeOrg/library-1.git",
-    "library-2": "git+ssh://git@github.com:SomeOrg/library-2.git"
-  }
-}
+The `.meta` file for the overall meta-repo includes two extra keys, `artifacts` and `organisation`:
 
-```
-
-```json
-// service-2/package.json
-{ 
-  "dependencies": {
-    "library-1": "git+ssh://git@github.com:SomeOrg/library-1.git",
-    "library-2": "git+ssh://git@github.com:SomeOrg/library-2.git"
-  }
-}
-```
-
-```json
-// library-3/package.json
-{ 
-  "dependencies": {
-    "library-1": "git+ssh://git@github.com:SomeOrg/library-1.git"
-  }
-}
-```
-
-
-When we set up a new story and add projects to it:
-```bash
-# go to the meta-repo
-cd meta-repo
-
-# set a story
-story set new-navigation
-story add service-1
-```
-
-Then:
-* a new story is created with a new `.meta`
 ```json
 {
-  "story": "new-navigation",
-  "primaries": {
-    "service-1": true
+  "artifacts": {
+    "api": false,
+    "app": false
   },
+  "organisation": "GitHubOrgName",
   "projects": {
-    "service-1": "git@github.com:SomeOrg/service-1.git",
-    "library-1": "git@github.com:SomeOrg/library-1.git",
-    "library-2": "git@github.com:SomeOrg/library-2.git"
+    "api": "git@github.com:GitHubOrgName/api.git",
+    "app": "git@github.com:GitHubOrgName/app.git",
+    "lib-1": "git@github.com:GitHubOrgName/lib-1.git",
+    "lib-2": "git@github.com:GitHubOrgName/lib-2.git"
   }
 }
 ```
 
-* service-1, library-1, library-2 are added to the story
-* branch `new-navigation` is checked out on all three and the meta-repo
-* `service-1/package.json` is updated
+`artifacts` refers to projects that can be built and deployed, and should be set to `false` in the `.meta` file for
+a meta-repo. `organisation` refers to the name of the organisation on GitHub where private repositories are hosted.
 
-```json
-// service-1/package.json
-{ 
-  "dependencies": {
-    "library-1": "git+ssh://git@github.com:SomeOrg/library-1.git#new-navigation",
-    "library-2": "git+ssh://git@github.com:SomeOrg/library-2.git#new-navigation"
-  }
-}
-```
 
-We can use the usual `meta` commands for local development
-
-```bash
-meta git add .
-meta git commit -m "new nav is done!"
-```
-
-Assuming that we have only modified `service-1` and `library-1`, we can prune unmodified projects:
-
-```
-story prune
-```
-
-* the story is updated with the unmodified `library-2` removed and `service-1/package.json` modified
+The `.meta` file for stories includes a number of extra keys on top of those introduced above:
 ```json
 {
-  "story": "new-navigation",
-  "primaries": {
-    "service-1": true
-  },
-  "projects": {
-    "service-1": "git@github.com:SomeOrg/service-1.git",
-    "library-1": "git@github.com:SomeOrg/library-1.git"
-  }
-}
-```
-
-```json
-// service-1/package.json
-{ 
-  "dependencies": {
-    "library-1": "git+ssh://git@github.com:SomeOrg/library-1.git#new-navigation",
-    "library-2": "git+ssh://git@github.com:SomeOrg/library-2.git"
-  }
-}
-```
-
-* the unmodified `new-navigation` branch on `library-2` is removed and master is checked out
-
-Finally, to make sure that everything within the blast radius of our story is covered (ie. `library-3`,
-which has `library-1` as a dependency):
-
-```bash
-story blast
-```
-
-* the story is updated again with projects within the blast radius
-```json
-{
-  "story": "new-navigation",
   "blast-radius": {
-    "library-3": true
+    "api": null,
+    "lib-2": ["api", "app"]
   },
-  "primaries": {
-    "service-1": true
+  "artifacts": {
+    "api": true,
+    "app": false
   },
+  "story": "story/auth-endpoint",
+  "organisation": "GitHubOrgName",
   "projects": {
-    "service-1": "git@github.com:SomeOrg/service-1.git",
-    "library-1": "git@github.com:SomeOrg/library-1.git",
-    "library-3": "git@github.com:SomeOrg/library-3.git"
-  }
-}
-```
-* a `new-navigation` branch is checked out for `library-3`
-* any project in the story that uses `library-3` has its' `package.json` updated
-```json
-// */package.json
-{ 
-  "dependencies": {
-    "library-3": "git+ssh://git@github.com:SomeOrg/library-3.git#new-navigation"
+    "api": "git@github.com:GitHubOrgName/api.git",
+    "lib-2": "git@github.com:GitHubOrgName/lib-2.git"
+  },
+  "hashes": {
+    "api": "c917d416366a04f2ec62c2e8aaee5bc740d8c6aa",
+    "lib-2": "6bbe39ebe169c46eee7b2a6bc392e0b37e397a0e"
   }
 }
 ```
 
-When ready to prepare a merge to the master branch, we need to clean up references to the story
-branch in the various `package.json` files:
+`blast-radius` refers to the other projects that can be impacted by changes by a given project. `story` refers to the
+name of the branch that will be checked out on any projects added to a story. `hashes` refers to the current commit hashes
+of each project at the time of a commit to the meta-repo.
 
-```bash
-story complete
-```
+This latter file is automatically generated and maintained by `story` commands. For example, adding or removing a project
+to a story will update the `projects`, `hashes`, `blast-radius` and `artifacts` keys accordingly, and making a commit
+across the meta-repo will update the `hashes` key before making a final commit to the meta-repo.
 
-* all `package.json` files will have the the `#new-navigation` suffix removed from their dependencies
+# Commands
+## Create
+`story create [story-name]` will:
+* Checkout a new branch with the desired name
+* Move the `.meta` file of the meta-repo to `.meta.json`
+* Create a new `.meta` file for the story
+
+## Load
+`story load [story-name]` will:
+* Checkout the desired branch on the meta-repo if it exists
+* Checkout the desired branch on all projects in the story if they exist
+
+## Reset
+`story reset --trunk master` will:
+* Checkout the trunk branch on all projects of a story
+
+## List
+`story list` will:
+* Print a list of all projects in the current story
+
+## Artifacts
+`story artifacts` will:
+* Print a list of all projects that should  be built and deployed in the current story
+
+## Add
+`story add [projects]` will:
+* Add the projects to the `.meta` file
+* Checkout a story branch for the projects
+* Update the blast radius of the story
+* Update the commit hashes of projects in the story
+* Update `package.json` files to pin references to projects in the story to the story branch
+
+## Remove
+`story remove [projects]` will:
+* Remove the projects from the `.meta` file
+* Delete story branches for the projects
+* Update the blast radius of the story
+* Update the commit hashes of projects in the story
+* Update `package.json` files to unpin references to projects in the story from the story branch
+
+## Commit
+`story commit [-m "commit msg""]` will:
+* Commit staged files in all story projects with the given commit message
+* Update the commit hashes of projects in the story
+* Commit the updated `.meta` file to the meta-repo, with GitHub links to each project commit in the extended commit message
+* Update `package.json` files to unpin references to projects in the story from the story branch
