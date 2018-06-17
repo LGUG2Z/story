@@ -16,17 +16,21 @@ import (
 	"github.com/urfave/cli"
 )
 
+
+var ErrCommandRequiresAnArgument = fmt.Errorf("this command requires an argument")
+var ErrAlreadyWorkingOnAStory = fmt.Errorf("already working on a story")
+
 func CreateCmd(fs afero.Fs) cli.Command {
 	return cli.Command{
 		Name:  "create",
 		Usage: "Creates a new story",
 		Action: func(c *cli.Context) error {
 			if isStory {
-				return fmt.Errorf("already working on a story")
+				return ErrAlreadyWorkingOnAStory
 			}
 
 			if !c.Args().Present() {
-				return fmt.Errorf("this command requires an argument")
+				return ErrCommandRequiresAnArgument
 			}
 
 			name := c.Args().First()

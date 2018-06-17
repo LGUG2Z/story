@@ -1,4 +1,5 @@
 .idea
+/cli/cli.coverprofile
 /git/git.coverprofile
 /manifest/manifest.coverprofile
 /node/node.coverprofile
