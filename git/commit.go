@@ -26,7 +26,6 @@ func hasStagedChanges(project string) (bool, error) {
 	return len(trimmed) > 0, nil
 }
 
-// TODO: Add test
 func Commit(opts CommitOpts) (string, error) {
 	changes, err := hasStagedChanges(opts.Project)
 	if err != nil {
