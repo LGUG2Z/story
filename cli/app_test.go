@@ -222,7 +222,7 @@ var _ = Describe("App", func() {
 			// Given an initialised metarepo with a story and a project added
 			Expect(cli.App().Run([]string{"story", "create", "test-story"})).To(Succeed())
 
-			// When I try to list projects,
+			// When I try to list artifacts,
 			err := cli.App().Run([]string{"story", "artifacts", "test-story"})
 
 			// Then it returns an error
@@ -233,7 +233,7 @@ var _ = Describe("App", func() {
 		It("Should return an error if not working on a story", func() {
 			// Given an initialised metarepo not on a story
 
-			// When I try to list projects,
+			// When I try to list artifacts,
 			err := cli.App().Run([]string{"story", "artifacts"})
 
 			// Then it returns an error
@@ -296,13 +296,76 @@ var _ = Describe("App", func() {
 		It("Should return an error if not working on a story", func() {
 			// Given an initialised metarepo not on a story
 
-			// When I try to list projects,
+			// When I try to add a project
 			err := cli.App().Run([]string{"story", "add", "one"})
 
 			// Then it returns an error
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(Equal(cli.ErrNotWorkingOnAStory))
 		})
+	})
 
+	Describe("Remove", func() {
+		It("Should remove a project from the story", func() {
+			// Given an initialised metarepo with projects and a story with a project added
+			Expect(fs.MkdirAll("one", os.FileMode(0700))).To(Succeed())
+			p := node.PackageJSON{}
+			b, err := json.Marshal(p)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(afero.WriteFile(fs, "one/package.json", b, os.FileMode(0666))).To(Succeed())
+
+			command := exec.Command("git", "init")
+			command.Dir = "one"
+			_, err = command.CombinedOutput()
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = git.Add(git.AddOpts{Project: "one", Files: []string{"package.json"}})
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = git.Commit(git.CommitOpts{Project: "one", Messages: []string{"initial commit"}})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(cli.App().Run([]string{"story", "create", "test-story"})).To(Succeed())
+			Expect(cli.App().Run([]string{"story", "add", "one"})).To(Succeed())
+
+			// When I remove a project
+			Expect(cli.App().Run([]string{"story", "remove", "one"})).To(Succeed())
+
+			// Then the project is not in the story meta file
+			s, err := manifest.LoadStory(fs)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(s.Projects).ToNot(HaveKeyWithValue("one", "git@github.com:test-org/one.git"))
+
+			// And the project is not on the story branch
+			branch, err := git.GetCurrentBranch(fs, "one")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(branch).To(Equal("master"))
+
+			// And artifacts are updated
+			Expect(s.Artifacts).To(HaveKeyWithValue("one", false))
+		})
+
+		It("Should return an error if no arguments are given", func() {
+			// Given an initialised metarepo with a story
+			Expect(cli.App().Run([]string{"story", "create", "test-story"})).To(Succeed())
+
+			// When I try to remove a project
+			err := cli.App().Run([]string{"story", "remove"})
+
+			// Then it returns an error
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(Equal(cli.ErrCommandRequiresAnArgument))
+		})
+
+		It("Should return an error if not working on a story", func() {
+			// Given an initialised metarepo not on a story
+
+			// When I try to remove a project
+			err := cli.App().Run([]string{"story", "remove", "one"})
+
+			// Then it returns an error
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(Equal(cli.ErrNotWorkingOnAStory))
+		})
 	})
 })
