@@ -11,6 +11,17 @@ import (
 )
 
 var _ = Describe("Meta", func() {
+	Describe("Trying to load non-existent files", func() {
+		It("Should throw an error", func() {
+			fs := afero.NewMemMapFs()
+			_, err := manifest.LoadMetaOnBranch(fs)
+			Expect(err).To(HaveOccurred())
+
+			_, err = manifest.LoadMetaOnTrunk(fs)
+			Expect(err).To(HaveOccurred())
+		})
+	})
+
 	Describe("Moving a meta manifest on the creation of a story", func() {
 		It("Should move the .meta file to a .meta.json file", func() {
 			// Given a meta file on the fs

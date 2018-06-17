@@ -10,6 +10,14 @@ import (
 )
 
 var _ = Describe("Story", func() {
+	Describe("Trying to load non-existent files", func() {
+		It("Should throw an error", func() {
+			fs := afero.NewMemMapFs()
+			_, err := manifest.LoadStory(fs)
+			Expect(err).To(HaveOccurred())
+		})
+	})
+
 	Describe("Creating a new story", func() {
 		It("Should create a story using the appropriate data from the meta file", func() {
 			// Given a meta file
