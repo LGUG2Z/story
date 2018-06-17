@@ -16,8 +16,10 @@ import (
 	"github.com/urfave/cli"
 )
 
-var ErrCommandRequiresAnArgument = fmt.Errorf("this command requires an argument")
 var ErrAlreadyWorkingOnAStory = fmt.Errorf("already working on a story")
+var ErrCommandRequiresAnArgument = fmt.Errorf("this command requires an argument")
+var ErrCommandTakesNoArguments = fmt.Errorf("this command takes no arguments")
+var ErrNotWorkingOnAStory = fmt.Errorf("not working on a story")
 
 func CreateCmd(fs afero.Fs) cli.Command {
 	return cli.Command{
@@ -62,11 +64,11 @@ func LoadCmd(fs afero.Fs) cli.Command {
 		Usage: "Loads an existing story",
 		Action: func(c *cli.Context) error {
 			if isStory {
-				return fmt.Errorf("already working on a story")
+				return ErrAlreadyWorkingOnAStory
 			}
 
 			if !c.Args().Present() {
-				return fmt.Errorf("this command requires an argument")
+				return ErrCommandRequiresAnArgument
 			}
 
 			name := c.Args().First()
@@ -102,11 +104,11 @@ func ResetCmd(fs afero.Fs) cli.Command {
 		Usage: "Resets all story branches to trunk branches",
 		Action: func(c *cli.Context) error {
 			if !isStory {
-				return fmt.Errorf("not working on a story")
+				return ErrNotWorkingOnAStory
 			}
 
 			if c.Args().Present() {
-				return fmt.Errorf("this command takes no arguments")
+				return ErrCommandTakesNoArguments
 			}
 
 			story, err := manifest.LoadStory(fs)

@@ -125,4 +125,33 @@ var _ = Describe("App", func() {
 			Expect(err).To(Equal(cli.ErrAlreadyWorkingOnAStory))
 		})
 	})
+
+	Describe("Reset", func() {
+		It("Should reset if currently working on a story", func() {
+			// Given an initialised metarepo with a story
+			Expect(cli.App().Run([]string{"story", "create", "test-story"})).To(Succeed())
+
+			// When I reset the story then it resets without error
+			Expect(cli.App().Run([]string{"story", "reset"})).To(Succeed())
+		})
+
+		It("Should return an error if extra arguments are given", func() {
+			// Given an initialised metarepo with a story
+			Expect(cli.App().Run([]string{"story", "create", "test-story"})).To(Succeed())
+
+			// When I reset the story then it resets without error
+			err := cli.App().Run([]string{"story", "reset", "test-story"})
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(Equal(cli.ErrCommandTakesNoArguments))
+		})
+
+		It("Should return an error if not working on a story", func() {
+			// Given an initialised metarepo not on a story
+
+			// When I reset the story then it resets without error
+			err := cli.App().Run([]string{"story", "reset"})
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(Equal(cli.ErrNotWorkingOnAStory))
+		})
+	})
 })
