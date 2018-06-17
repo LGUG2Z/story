@@ -391,6 +391,13 @@ var _ = Describe("App", func() {
 
 			Expect(cli.App().Run([]string{"story", "create", "test-story"})).To(Succeed())
 			Expect(cli.App().Run([]string{"story", "add", "one"})).To(Succeed())
+			preCommitStory, err := manifest.LoadStory(fs)
+			Expect(err).NotTo(HaveOccurred())
+
+			// And staged changes in a project
+			Expect(afero.WriteFile(fs, "one/blank", []byte{}, os.FileMode(0666))).To(Succeed())
+			_, err = git.Add(git.AddOpts{Project: "one", Files: []string{"blank"}})
+			Expect(err).NotTo(HaveOccurred())
 
 			// When I make a story commit
 			err = cli.App().Run([]string{"story", "commit", "-m", "test commit"})
@@ -400,11 +407,10 @@ var _ = Describe("App", func() {
 			headsAreEqual, err := git.HeadsAreEqual(fs, ".", "master", "test-story")
 			Expect(headsAreEqual).To(BeFalse())
 
-			// And there should be a .storyhash file
-			exists, err := afero.Exists(fs, ".storyhash")
-			Expect(err).ToNot(HaveOccurred())
-
-			Expect(exists).To(BeTrue())
+			// And the commit hashes should be updated in the story meta file
+			postCommitStory, err := manifest.LoadStory(fs)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(preCommitStory.Hashes["one"]).NotTo(Equal(postCommitStory.Hashes["one"]))
 		})
 
 		It("Should return an error if extra arguments are given", func() {

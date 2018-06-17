@@ -5,7 +5,6 @@ import (
 
 	"sort"
 
-	"os"
 	"strings"
 
 	"github.com/LGUG2Z/blastradius/blastradius"
@@ -247,6 +246,10 @@ func AddCmd(fs afero.Fs) cli.Command {
 			// Use the Blast Radius to update artifacts
 			story.MapBlastRadiusToArtifacts()
 
+			// Set the current commit hashes
+			hashes, err := story.GetCommitHashes(fs)
+			story.Hashes = hashes
+
 			// Update the manifest
 			if err := story.Write(fs); err != nil {
 				return err
@@ -366,6 +369,7 @@ func CommitCmd(fs afero.Fs) cli.Command {
 				return err
 			}
 
+			// Commit in all the projects
 			messages := []string{c.String("message")}
 			for project := range story.Projects {
 				output, err := git.Commit(git.CommitOpts{Project: project, Messages: messages})
@@ -376,32 +380,31 @@ func CommitCmd(fs afero.Fs) cli.Command {
 				printGitOutput(output, project)
 			}
 
-			var hashMessages []string
-			var storyHashes []string
-
+			// Update the hashes in the meta file and write it out
 			hashes, err := story.GetCommitHashes(fs)
-			for project, hash := range hashes {
-				commitUrl := fmt.Sprintf("https://github.com/%s/%s/commit/%s", story.Orgranisation, project, hash)
-				projectHash := fmt.Sprintf("%s: %s", project, hash)
-				hashMessages = append(hashMessages, commitUrl)
-				storyHashes = append(storyHashes, projectHash)
-			}
-
-			sort.Strings(hashMessages)
-			sort.Strings(storyHashes)
-
-			b := []byte(strings.Join(storyHashes, "\n"))
-			if err := afero.WriteFile(fs, ".storyhash", b, os.FileMode(0666)); err != nil {
+			story.Hashes = hashes
+			if err := story.Write(fs); err != nil {
 				return err
 			}
 
-			output, err := git.Add(git.AddOpts{Files: []string{".storyhash"}})
+			// Format the hashes to the GitHub format to link to a specific commit
+			var hashMessages []string
+			for project, hash := range hashes {
+				commitUrl := fmt.Sprintf("https://github.com/%s/%s/commit/%s", story.Orgranisation, project, hash)
+				hashMessages = append(hashMessages, commitUrl)
+			}
+
+			// Add the hashes to the slice for git commit messages
+			sort.Strings(hashMessages)
+			messages = append(messages, strings.Join(hashMessages, "\n"))
+
+			// Stage the story file
+			output, err := git.Add(git.AddOpts{Files: []string{".meta"}})
 			if err != nil {
 				return err
 			}
 
-			messages = append(messages, strings.Join(hashMessages, "\n"))
-
+			// Commit on the metarepo
 			output, err = git.Commit(git.CommitOpts{Messages: messages})
 			if err != nil {
 				return err

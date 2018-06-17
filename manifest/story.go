@@ -21,6 +21,7 @@ type Story struct {
 	Orgranisation string                       `json:"organisation"`
 	PackageJSONs  map[string]*node.PackageJSON `json:"-"`
 	Projects      map[string]string            `json:"projects,omitempty"`
+	Hashes        map[string]string            `json:"hashes,omitempty"`
 }
 
 func NewStory(name string, meta *Meta) *Story {
