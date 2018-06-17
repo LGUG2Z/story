@@ -143,11 +143,11 @@ func ListCmd(fs afero.Fs) cli.Command {
 		Usage:     "Shows a list of projects added to the current story",
 		Action: func(c *cli.Context) error {
 			if !isStory {
-				return fmt.Errorf("not working on a story")
+				return ErrNotWorkingOnAStory
 			}
 
 			if c.Args().Present() {
-				return fmt.Errorf("this command takes no arguments")
+				return ErrCommandTakesNoArguments
 			}
 
 			story, err := manifest.LoadStory(fs)
@@ -171,11 +171,11 @@ func ArtifactsCmd(fs afero.Fs) cli.Command {
 		Usage:     "Shows a list of artifacts to be built and deployed for the current story",
 		Action: func(c *cli.Context) error {
 			if !isStory {
-				return fmt.Errorf("not working on a story")
+				return ErrNotWorkingOnAStory
 			}
 
 			if c.Args().Present() {
-				return fmt.Errorf("this command takes no arguments")
+				return ErrCommandTakesNoArguments
 			}
 
 			story, err := manifest.LoadStory(fs)
@@ -201,11 +201,11 @@ func AddCmd(fs afero.Fs) cli.Command {
 		Usage:     "Adds a project to the current story",
 		Action: func(c *cli.Context) error {
 			if !isStory {
-				return fmt.Errorf("not working on a story")
+				return ErrNotWorkingOnAStory
 			}
 
 			if !c.Args().Present() {
-				return fmt.Errorf("this command requires at least one argument")
+				return ErrCommandRequiresAnArgument
 			}
 
 			story, err := manifest.LoadStory(fs)
@@ -280,11 +280,11 @@ func RemoveCmd(fs afero.Fs) cli.Command {
 		Usage:     "Removes a project from the current story",
 		Action: func(c *cli.Context) error {
 			if !isStory {
-				return fmt.Errorf("not working on a story")
+				return ErrNotWorkingOnAStory
 			}
 
 			if !c.Args().Present() {
-				return fmt.Errorf("this command requires at least one argument")
+				return ErrCommandRequiresAnArgument
 			}
 
 			story, err := manifest.LoadStory(fs)
@@ -354,11 +354,11 @@ func CommitCmd(fs afero.Fs) cli.Command {
 		},
 		Action: cli.ActionFunc(func(c *cli.Context) error {
 			if !isStory {
-				return fmt.Errorf("not working on a story")
+				return ErrNotWorkingOnAStory
 			}
 
 			if c.Args().Present() {
-				return fmt.Errorf("this command takes no arguments")
+				return ErrCommandTakesNoArguments
 			}
 
 			story, err := manifest.LoadStory(fs)
