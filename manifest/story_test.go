@@ -133,10 +133,25 @@ var _ = Describe("Story", func() {
 			// When I add a project to that story
 			allProjects := make(map[string]string)
 			allProjects["test-project"] = "test"
-			s.AddToManifest(allProjects, "test-project")
+			Expect(s.AddToManifest(allProjects, "test-project")).To(Succeed())
 
 			// It should update the story
 			Expect(s.Projects).To(HaveKeyWithValue("test-project", "git@github.com:test-org/test-project.git"))
+		})
+
+		It("Should not add the project that is not in the metarepo", func() {
+			// Given a story
+			s := NewStoryBuilder().Name("test-story").Organisation("test-org").Build()
+
+			// When I add a project to that story that is not in the metarepo
+			allProjects := make(map[string]string)
+			allProjects["real-project"] = "test"
+			err := s.AddToManifest(allProjects, "test-project")
+
+			// It should not succeed and an informative error should be returned
+			Expect(err).To(HaveOccurred())
+
+			Expect(err.Error()).To(Equal("this project is not in the metarepo"))
 		})
 	})
 
