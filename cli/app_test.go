@@ -139,8 +139,10 @@ var _ = Describe("App", func() {
 			// Given an initialised metarepo with a story
 			Expect(cli.App().Run([]string{"story", "create", "test-story"})).To(Succeed())
 
-			// When I reset the story then it resets without error
+			// When I reset the story
 			err := cli.App().Run([]string{"story", "reset", "test-story"})
+
+			// Then it returns an error
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(Equal(cli.ErrCommandTakesNoArguments))
 		})
@@ -148,22 +150,25 @@ var _ = Describe("App", func() {
 		It("Should return an error if not working on a story", func() {
 			// Given an initialised metarepo not on a story
 
-			// When I reset the story then it resets without error
+			// When I reset the story
 			err := cli.App().Run([]string{"story", "reset"})
+
+			// Then it returns an error
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(Equal(cli.ErrNotWorkingOnAStory))
 		})
 	})
 
 	Describe("List", func() {
-		It("Should return a list of projects in the story", func() {
+		It("Should print a list of projects in the story", func() {
 			// Given an initialised metarepo with a story and a project added
 			Expect(cli.App().Run([]string{"story", "create", "test-story"})).To(Succeed())
 			s, err := manifest.LoadStory(fs)
 			Expect(err).NotTo(HaveOccurred())
 			s.Projects = map[string]string{"one": "git@github.com:test-org/one.git"}
+			Expect(s.Write(fs)).To(Succeed())
 
-			// When I run the list command it should succeed
+			// When I run the list command, Then it should succeed
 			Expect(cli.App().Run([]string{"story", "list"})).To(Succeed())
 
 			// TODO: Maybe check the stdout and assert on that too
@@ -172,12 +177,11 @@ var _ = Describe("App", func() {
 		It("Should return an error if extra arguments are given", func() {
 			// Given an initialised metarepo with a story and a project added
 			Expect(cli.App().Run([]string{"story", "create", "test-story"})).To(Succeed())
-			s, err := manifest.LoadStory(fs)
-			Expect(err).NotTo(HaveOccurred())
-			s.Projects = map[string]string{"one": "git@github.com:test-org/one.git"}
 
-			// When I reset the story then it resets without error
-			err = cli.App().Run([]string{"story", "list", "test-story"})
+			// When I try to list projects,
+			err := cli.App().Run([]string{"story", "list", "test-story"})
+
+			// Then it returns an error
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(Equal(cli.ErrCommandTakesNoArguments))
 		})
@@ -185,8 +189,49 @@ var _ = Describe("App", func() {
 		It("Should return an error if not working on a story", func() {
 			// Given an initialised metarepo not on a story
 
-			// When I reset the story then it resets without error
+			// When I try to list projects,
 			err := cli.App().Run([]string{"story", "list"})
+
+			// Then it returns an error
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(Equal(cli.ErrNotWorkingOnAStory))
+		})
+	})
+
+	Describe("Artifacts", func() {
+		It("Should print a list of the story artifacts", func() {
+			// Given an initialised metarepo with a story and a project added
+			Expect(cli.App().Run([]string{"story", "create", "test-story"})).To(Succeed())
+			s, err := manifest.LoadStory(fs)
+			Expect(err).NotTo(HaveOccurred())
+			s.Artifacts = map[string]bool{"one": true}
+			Expect(s.Write(fs)).To(Succeed())
+
+			// When I run the list command, Then it succeeds
+			Expect(cli.App().Run([]string{"story", "artifacts"})).To(Succeed())
+
+			// TODO: Maybe check the stdout and assert on that too
+		})
+
+		It("Should return an error if extra arguments are given", func() {
+			// Given an initialised metarepo with a story and a project added
+			Expect(cli.App().Run([]string{"story", "create", "test-story"})).To(Succeed())
+
+			// When I try to list projects,
+			err := cli.App().Run([]string{"story", "artifacts", "test-story"})
+
+			// Then it returns an error
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(Equal(cli.ErrCommandTakesNoArguments))
+		})
+
+		It("Should return an error if not working on a story", func() {
+			// Given an initialised metarepo not on a story
+
+			// When I try to list projects,
+			err := cli.App().Run([]string{"story", "artifacts"})
+
+			// Then it returns an error
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(Equal(cli.ErrNotWorkingOnAStory))
 		})
