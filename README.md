@@ -1,9 +1,13 @@
+# story
 [![Go Report Card](https://goreportcard.com/badge/github.com/lgug2z/story)](https://goreportcard.com/report/github.com/lgug2z/story)
 [![Maintainability](https://api.codeclimate.com/v1/badges/ed8cb042219f695c8436/maintainability)](https://codeclimate.com/github/LGUG2Z/story/maintainability)
 [![Test Coverage](https://api.codeclimate.com/v1/badges/ed8cb042219f695c8436/test_coverage)](https://codeclimate.com/github/LGUG2Z/story/test_coverage)
 [![Build Status](https://travis-ci.org/LGUG2Z/story.svg?branch=master)](https://travis-ci.org/LGUG2Z/story)
 
-- [Overview](#overview)
+`story` works as a layer on top of [meta](https://github.com/mateodelnorte/meta) to aid development, continuous integration,
+testing, container building and deployments when working with meta-repos containing a large number of inter-dependent
+`node` projects.
+
 - [The .meta File](#the-meta-file)
 - [Commands](#commands)
   * [Create](#create)
@@ -14,11 +18,6 @@
   * [Add](#add)
   * [Remove](#remove)
   * [Commit](#commit)
-
-# Overview
-`story` works as a layer on top of [meta](https://github.com/mateodelnorte/meta) to aid development, continuous integration,
-testing, container building and deployments when working with meta-repos containing a large number of inter-dependent
-`node` projects.
 
 # The .meta File
 There are two types of `.meta` files used by `story`, which are both supersets of the `.meta` file used by
@@ -55,7 +54,7 @@ The `.meta` file for stories includes a number of extra keys on top of those int
   },
   "artifacts": {
     "api": true,
-    "app": false
+    "app": true
   },
   "story": "story/auth-endpoint",
   "organisation": "GitHubOrgName",
