@@ -77,7 +77,6 @@ func (s *Story) MapBlastRadiusToArtifacts() {
 	}
 }
 
-// TODO: add test
 func (s *Story) GetCommitHashes(fs afero.Fs) (map[string]string, error) {
 	hashMap := make(map[string]string)
 	for project := range s.Projects {

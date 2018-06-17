@@ -250,4 +250,26 @@ var _ = Describe("Story", func() {
 			Expect(s.Artifacts).ToNot(HaveKey("ten"))
 		})
 	})
+
+	Describe("Getting commit hashes for all projects in the story", func() {
+		It("Should return a project-hash map", func() {
+			// Given a story with n projects
+			s := NewStoryBuilder().Name("test-story").Projects("one", "two").Build()
+
+			// And the appropriate git files
+			fs := afero.NewMemMapFs()
+			Expect(fs.MkdirAll("one/.git/refs/heads", os.FileMode(0700))).To(Succeed())
+			Expect(fs.MkdirAll("two/.git/refs/heads", os.FileMode(0700))).To(Succeed())
+			Expect(afero.WriteFile(fs, "one/.git/refs/heads/test-story", []byte("hash-one"), os.FileMode(0666))).To(Succeed())
+			Expect(afero.WriteFile(fs, "two/.git/refs/heads/test-story", []byte("hash-two"), os.FileMode(0666))).To(Succeed())
+
+			// When I get the commit hashes for all projects
+			hashes, err := s.GetCommitHashes(fs)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Then I expect all projects with their latest commit messages to be in the project-hash map
+			Expect(hashes).To(HaveKeyWithValue("one", "hash-one"))
+			Expect(hashes).To(HaveKeyWithValue("two", "hash-two"))
+		})
+	})
 })
