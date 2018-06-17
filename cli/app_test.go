@@ -279,6 +279,9 @@ var _ = Describe("App", func() {
 
 			// And artifacts are updated
 			Expect(s.Artifacts).To(HaveKeyWithValue("one", true))
+
+			// And hashes are updated
+			Expect(s.Hashes).To(HaveKey("one"))
 		})
 
 		It("Should return an error if no arguments are given", func() {
@@ -343,6 +346,9 @@ var _ = Describe("App", func() {
 
 			// And artifacts are updated
 			Expect(s.Artifacts).To(HaveKeyWithValue("one", false))
+
+			// And hashes are updated
+			Expect(s.Hashes).NotTo(HaveKey("one"))
 		})
 
 		It("Should return an error if no arguments are given", func() {
