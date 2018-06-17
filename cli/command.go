@@ -246,7 +246,7 @@ func AddCmd(fs afero.Fs) cli.Command {
 			// Use the Blast Radius to update artifacts
 			story.MapBlastRadiusToArtifacts()
 
-			// Set the current commit hashes
+			// Set the latest commit hashes for current projects
 			hashes, err := story.GetCommitHashes(fs)
 			story.Hashes = hashes
 
@@ -318,6 +318,10 @@ func RemoveCmd(fs afero.Fs) cli.Command {
 
 			// Use the Blast Radius to update artifacts
 			story.MapBlastRadiusToArtifacts()
+
+			// Set the latest commit hashes for current projects
+			hashes, err := story.GetCommitHashes(fs)
+			story.Hashes = hashes
 
 			// Update the manifest
 			if err := story.Write(fs); err != nil {
