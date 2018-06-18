@@ -41,21 +41,13 @@ The `.meta` file for the overall meta-repo includes two extra keys, `artifacts` 
 }
 ```
 
-`artifacts` refers to projects that can be built and deployed, and should be set to `false` in the `.meta` file for
-a meta-repo. `organisation` refers to the name of the organisation on GitHub where private repositories are hosted.
+`artifacts` refers to projects that can be built and deployed, and should be set to `false` in the `.meta` file for a meta-repo.
 
+`organisation` refers to the name of the organisation on GitHub where private repositories are hosted.
 
 The `.meta` file for stories includes a number of extra keys on top of those introduced above:
 ```json
 {
-  "blast-radius": {
-    "api": null,
-    "lib-2": ["api", "app"]
-  },
-  "artifacts": {
-    "api": true,
-    "app": true
-  },
   "story": "story/auth-endpoint",
   "organisation": "GitHubOrgName",
   "projects": {
@@ -65,13 +57,32 @@ The `.meta` file for stories includes a number of extra keys on top of those int
   "hashes": {
     "api": "c917d416366a04f2ec62c2e8aaee5bc740d8c6aa",
     "lib-2": "6bbe39ebe169c46eee7b2a6bc392e0b37e397a0e"
+  },
+  "blast-radius": {
+    "api": null,
+    "lib-2": ["api", "app"]
+  },
+  "artifacts": {
+    "api": true,
+    "app": true
+  },
+  "all-projects": {
+    "api": "git@github.com:GitHubOrgName/api.git",
+    "app": "git@github.com:GitHubOrgName/app.git",
+    "lib-1": "git@github.com:GitHubOrgName/lib-1.git",
+    "lib-2": "git@github.com:GitHubOrgName/lib-2.git"
   }
 }
 ```
+`story` refers to the name of the branch that will be checked out on any projects added to a story.
 
-`blast-radius` refers to projects that can be impacted by changes in the scope of the current story. `story` refers to the
-name of the branch that will be checked out on any projects added to a story. `hashes` refers to the current commit hashes
-of each project at the time of a commit to the meta-repo.
+`projects` refers to the subset of projects that the story requires work to be done on.
+
+`hashes` refers to the current commit hashes of each project at the time of a commit to the meta-repo.
+
+`blast-radius` refers to projects in the meta-repo that can be impacted by made changes in the scope of the current story.
+
+`all-projects` refers to the complete list of projects in the meta-repo.
 
 This latter file is automatically generated and maintained by `story` commands. For example, adding or removing a project
 to a story will update the `projects`, `hashes`, `blast-radius` and `artifacts` keys accordingly, and making a commit
@@ -80,8 +91,7 @@ across the meta-repo will update the `hashes` key before making a final commit t
 # Commands
 ## Create
 `story create [story-name]` will:
-* Checkout a new branch with the desired name
-* Move the `.meta` file of the meta-repo to `.meta.json`
+* Checkout a new branch on the meta-repo repository with the story name
 * Create a new `.meta` file for the story
 
 ## Load
