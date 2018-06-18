@@ -69,7 +69,7 @@ The `.meta` file for stories includes a number of extra keys on top of those int
 }
 ```
 
-`blast-radius` refers to the other projects that can be impacted by changes by a given project. `story` refers to the
+`blast-radius` refers to projects that can be impacted by changes in the scope of the current story. `story` refers to the
 name of the branch that will be checked out on any projects added to a story. `hashes` refers to the current commit hashes
 of each project at the time of a commit to the meta-repo.
 
@@ -90,8 +90,8 @@ across the meta-repo will update the `hashes` key before making a final commit t
 * Checkout the desired branch on all projects in the story if they exist
 
 ## Reset
-`story reset --trunk master` will:
-* Checkout the trunk branch on all projects of a story
+`story reset` will:
+* Checkout the trunk branch (default `master`) on all projects of a story
 
 ## List
 `story list` will:
@@ -99,7 +99,7 @@ across the meta-repo will update the `hashes` key before making a final commit t
 
 ## Artifacts
 `story artifacts` will:
-* Print a list of all projects that should  be built and deployed in the current story
+* Print a list of all projects that should be built and deployed in the current story
 
 ## Add
 `story add [projects]` will:
@@ -118,7 +118,7 @@ across the meta-repo will update the `hashes` key before making a final commit t
 * Update `package.json` files to unpin references to projects in the story from the story branch
 
 ## Commit
-`story commit [-m "commit msg""]` will:
+`story commit [-m "commit msg"]` will:
 * Commit staged files in all story projects with the given commit message
 * Update the commit hashes of projects in the story
 * Commit the updated `.meta` file to the meta-repo, with GitHub links to each project commit in the extended commit message
