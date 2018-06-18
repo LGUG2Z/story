@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/LGUG2Z/story/manifest"
-	"github.com/LGUG2Z/story/node"
 	"github.com/spf13/afero"
 )
 
@@ -78,8 +77,13 @@ func (b *StoryBuilder) Projects(projects ...string) *StoryBuilder {
 	return b
 }
 
-func (b *StoryBuilder) PackageJSONs(packageJSONs map[string]*node.PackageJSON) *StoryBuilder {
-	b.story.PackageJSONs = packageJSONs
+func (b *StoryBuilder) AllProjects(projects ...string) *StoryBuilder {
+	b.story.AllProjects = make(map[string]string)
+
+	for _, project := range projects {
+		b.story.AllProjects[project] = fmt.Sprintf("git@github.com:%s/%s.git", b.story.Orgranisation, project)
+	}
+
 	return b
 }
 

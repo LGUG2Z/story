@@ -23,6 +23,7 @@ var _ = Describe("Story", func() {
 			// Given a meta file
 			m := NewMetaBuilder().
 				Orgranisation("test-org").
+				Projects("one", "two").
 				Artifacts("one").
 				Build()
 
@@ -33,6 +34,8 @@ var _ = Describe("Story", func() {
 			Expect(s.Name).To(Equal("test-story"))
 			Expect(s.Orgranisation).To(Equal("test-org"))
 			Expect(s.Artifacts).To(HaveKeyWithValue("one", false))
+			Expect(s.AllProjects).To(HaveKeyWithValue("one", "git@github.com:test-org/one.git"))
+			Expect(s.AllProjects).To(HaveKeyWithValue("two", "git@github.com:test-org/two.git"))
 		})
 	})
 
@@ -72,6 +75,7 @@ var _ = Describe("Story", func() {
   },
   "story": "test-story",
   "organisation": "test-org",
+  "all-projects": null,
   "projects": {
     "one": "git@github.com:test-org/one.git"
   }
@@ -85,6 +89,9 @@ var _ = Describe("Story", func() {
 			// Given a valid story file on an fs
 			fs := afero.NewMemMapFs()
 			b := []byte(`{
+  "all-projects": {
+    "one": "git@github.com:test-org/one.git"
+  },
   "blast-radius": {
     "one": null
   },
