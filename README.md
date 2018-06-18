@@ -132,7 +132,7 @@ across the meta-repo will update the `hashes` key before making a final commit t
 * Commit staged files in all story projects with the given commit message
 * Update the commit hashes of projects in the story
 * Commit the updated `.meta` file to the meta-repo, with GitHub links to each project commit in the extended commit message
-    * ```bash
+    * ```
       commit 8f59319fc2d0403199fb2c6148b5ab67919424f3 (HEAD -> story/commit-example)
       Author: jiqb <gthbji@ml1.net>
       Date:   Mon Jun 18 08:23:30 2018 +0100
