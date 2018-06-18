@@ -140,5 +140,5 @@ across the meta-repo will update the `hashes` key before making a final commit t
       This is the message passed via the -m flag of the commit command 
 
       https://github.com/SecretOrg/api/commit/ad4f419b7d65292ef28ab8d1d3ef4346a6bdebe4
-      https://github.com/SecretOrg/lib-2/commit/e1f99366bcc71df8bccf6f3df66271a319c33240``` 
+      https://github.com/SecretOrg/lib-2/commit/e1f99366bcc71df8bccf6f3df66271a319c33240
 * Update `package.json` files to unpin references to projects in the story from the story branch
