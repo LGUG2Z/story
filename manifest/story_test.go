@@ -67,18 +67,18 @@ var _ = Describe("Story", func() {
 			Expect(err).NotTo(HaveOccurred())
 			actual := string(bytes)
 			expected := `{
+  "story": "test-story",
+  "organisation": "test-org",
+  "projects": {
+    "one": "git@github.com:test-org/one.git"
+  },
   "blast-radius": {
     "one": null
   },
   "artifacts": {
     "one": true
   },
-  "story": "test-story",
-  "organisation": "test-org",
-  "all-projects": null,
-  "projects": {
-    "one": "git@github.com:test-org/one.git"
-  }
+  "all-projects": null
 }`
 			Expect(actual).To(Equal(expected))
 		})

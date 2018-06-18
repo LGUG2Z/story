@@ -14,13 +14,13 @@ import (
 )
 
 type Story struct {
-	BlastRadius   map[string][]string `json:"blast-radius,omitempty"`
-	Artifacts     map[string]bool     `json:"artifacts,omitempty"`
 	Name          string              `json:"story,omitempty"`
 	Orgranisation string              `json:"organisation"`
-	AllProjects   map[string]string   `json:"all-projects"`
 	Projects      map[string]string   `json:"projects,omitempty"`
 	Hashes        map[string]string   `json:"hashes,omitempty"`
+	BlastRadius   map[string][]string `json:"blast-radius,omitempty"`
+	Artifacts     map[string]bool     `json:"artifacts,omitempty"`
+	AllProjects   map[string]string   `json:"all-projects"`
 }
 
 func NewStory(name string, meta *Meta) *Story {
