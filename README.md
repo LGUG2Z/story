@@ -31,12 +31,12 @@ The `.meta` file for the overall meta-repo includes two extra keys, `artifacts` 
     "api": false,
     "app": false
   },
-  "organisation": "GitHubOrgName",
+  "organisation": "SecretOrg",
   "projects": {
-    "api": "git@github.com:GitHubOrgName/api.git",
-    "app": "git@github.com:GitHubOrgName/app.git",
-    "lib-1": "git@github.com:GitHubOrgName/lib-1.git",
-    "lib-2": "git@github.com:GitHubOrgName/lib-2.git"
+    "api": "git@github.com:SecretOrg/api.git",
+    "app": "git@github.com:SecretOrg/app.git",
+    "lib-1": "git@github.com:SecretOrg/lib-1.git",
+    "lib-2": "git@github.com:SecretOrg/lib-2.git"
   }
 }
 ```
@@ -49,10 +49,10 @@ The `.meta` file for stories includes a number of extra keys on top of those int
 ```json
 {
   "story": "story/auth-endpoint",
-  "organisation": "GitHubOrgName",
+  "organisation": "SecretOrg",
   "projects": {
-    "api": "git@github.com:GitHubOrgName/api.git",
-    "lib-2": "git@github.com:GitHubOrgName/lib-2.git"
+    "api": "git@github.com:SecretOrg/api.git",
+    "lib-2": "git@github.com:SecretOrg/lib-2.git"
   },
   "hashes": {
     "api": "c917d416366a04f2ec62c2e8aaee5bc740d8c6aa",
@@ -67,10 +67,10 @@ The `.meta` file for stories includes a number of extra keys on top of those int
     "app": true
   },
   "all-projects": {
-    "api": "git@github.com:GitHubOrgName/api.git",
-    "app": "git@github.com:GitHubOrgName/app.git",
-    "lib-1": "git@github.com:GitHubOrgName/lib-1.git",
-    "lib-2": "git@github.com:GitHubOrgName/lib-2.git"
+    "api": "git@github.com:SecretOrg/api.git",
+    "app": "git@github.com:SecretOrg/app.git",
+    "lib-1": "git@github.com:SecretOrg/lib-1.git",
+    "lib-2": "git@github.com:SecretOrg/lib-2.git"
   }
 }
 ```
@@ -132,4 +132,14 @@ across the meta-repo will update the `hashes` key before making a final commit t
 * Commit staged files in all story projects with the given commit message
 * Update the commit hashes of projects in the story
 * Commit the updated `.meta` file to the meta-repo, with GitHub links to each project commit in the extended commit message
+    * ```bash
+      commit 8f59319fc2d0403199fb2c6148b5ab67919424f3 (HEAD -> story/commit-example)
+      Author: jiqb <gthbji@ml1.net>
+      Date:   Mon Jun 18 08:23:30 2018 +0100
+
+      This is the message passed via the -m flag of the commit command 
+
+      https://github.com/SecretOrg/api/commit/ad4f419b7d65292ef28ab8d1d3ef4346a6bdebe4
+      https://github.com/SecretOrg/lib-2/commit/e1f99366bcc71df8bccf6f3df66271a319c33240
+    ```
 * Update `package.json` files to unpin references to projects in the story from the story branch
