@@ -131,7 +131,7 @@ across the meta-repo will update the `hashes` key before making a final commit t
 `story commit [-m "commit msg"]` will:
 * Commit staged files in all story projects with the given commit message
 * Update the commit hashes of projects in the story
-* Commit the updated `.meta` file to the meta-repo, with GitHub links to each project commit in the extended commit message
+* Commit the updated `.meta` file to the meta-repo, with links to each project commit in the extended commit message:
     * ```
       commit 8f59319fc2d0403199fb2c6148b5ab67919424f3 (HEAD -> story/commit-example)
       Author: jiqb <gthbji@ml1.net>
@@ -140,6 +140,5 @@ across the meta-repo will update the `hashes` key before making a final commit t
       This is the message passed via the -m flag of the commit command 
 
       https://github.com/SecretOrg/api/commit/ad4f419b7d65292ef28ab8d1d3ef4346a6bdebe4
-      https://github.com/SecretOrg/lib-2/commit/e1f99366bcc71df8bccf6f3df66271a319c33240
-    ```
+      https://github.com/SecretOrg/lib-2/commit/e1f99366bcc71df8bccf6f3df66271a319c33240``` 
 * Update `package.json` files to unpin references to projects in the story from the story branch
