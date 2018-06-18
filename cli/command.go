@@ -48,10 +48,6 @@ func CreateCmd(fs afero.Fs) cli.Command {
 
 			printGitOutput(output, "metarepo")
 
-			if err := meta.MoveForStory(fs); err != nil {
-				return err
-			}
-
 			return story.Write(fs)
 		},
 	}
@@ -212,14 +208,9 @@ func AddCmd(fs afero.Fs) cli.Command {
 				return err
 			}
 
-			meta, err := manifest.LoadMetaOnBranch(fs)
-			if err != nil {
-				return err
-			}
-
 			for _, project := range c.Args() {
 				// Add to manifest
-				if err := story.AddToManifest(meta.Projects, project); err != nil {
+				if err := story.AddToManifest(story.AllProjects, project); err != nil {
 					return err
 				}
 

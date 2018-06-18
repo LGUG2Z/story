@@ -90,7 +90,7 @@ var _ = Describe("App", func() {
 		It("Should load the story branches", func() {
 			// Given an initialised metarepo with a story which is then reset
 			Expect(cli.App().Run([]string{"story", "create", "test-story"})).To(Succeed())
-			_, err := git.Add(git.AddOpts{Files: []string{".meta", ".meta.json"}})
+			_, err := git.Add(git.AddOpts{Files: []string{".meta"}})
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = git.Commit(git.CommitOpts{Messages: []string{"story start"}})
