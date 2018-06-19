@@ -126,8 +126,8 @@ across the meta-repo will update the `hashes` key before making a final commit t
 * Update `package.json` files to pin references to projects in the story to the story branch
 ### --ci Flag
 `story add --ci [projects]` will attempt to clone a project in the meta-repo that may not be checked
-out for a given story. A specific use case that the `--ci` flag targets is running unit tests with
-for the entire blast radius of a story in CI tools. For example:
+out for a given story. A specific use case that the `--ci` flag targets is running unit tests for the
+ entire blast radius of a story in CI tools:
 
 ```bash
 # check out the projects modified in the story
