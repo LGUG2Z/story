@@ -54,8 +54,9 @@ func DeleteBranch(opts DeleteBranchOpts) (string, error) {
 		}
 	}
 
+	var args []string
+
 	if opts.Local {
-		var args []string
 		args = append(args, "branch")
 		args = append(args, "--delete")
 		args = append(args, "--force")
@@ -75,7 +76,6 @@ func DeleteBranch(opts DeleteBranchOpts) (string, error) {
 	}
 
 	if opts.Remote {
-		var args []string
 		args = append(args, "push")
 		args = append(args, "origin")
 		args = append(args, "--delete")
