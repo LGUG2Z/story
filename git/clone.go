@@ -20,7 +20,6 @@ func Clone(opts CloneOpts) (string, error) {
 		command.Args = append(command.Args, opts.Directory)
 	}
 
-	fmt.Println(args)
 	combinedOutput, err := command.CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("%s: %s", err, combinedOutput)

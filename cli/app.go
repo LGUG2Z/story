@@ -53,6 +53,7 @@ func App() *cli.App {
 		AddCmd(fs),
 		RemoveCmd(fs),
 		ListCmd(fs),
+		BlastRadiusCmd(fs),
 		ArtifactsCmd(fs),
 		CommitCmd(fs),
 	}

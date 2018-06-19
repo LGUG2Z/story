@@ -39,7 +39,7 @@ func initialiseMetarepo(directory string) error {
 	m := manifest.Meta{
 		Orgranisation: "test-org",
 		Artifacts:     map[string]bool{"one": false},
-		Projects:      map[string]string{"one": "git@github.com:test-org/one.git"},
+		Projects:      map[string]string{"one": "git@github.com:test-org/one.git", "two": "external/remote"},
 	}
 
 	b, err := json.MarshalIndent(m, "", " ")

@@ -240,6 +240,45 @@ var _ = Describe("App", func() {
 		})
 	})
 
+	Describe("Blast Radius", func() {
+		It("Should print a list blast radius of the story", func() {
+			// Given an initialised metarepo with a story and a project added
+			Expect(cli.App().Run([]string{"story", "create", "test-story"})).To(Succeed())
+			s, err := manifest.LoadStory(fs)
+			Expect(err).NotTo(HaveOccurred())
+			s.BlastRadius = map[string][]string{"one": {"two", "three"}}
+			Expect(s.Write(fs)).To(Succeed())
+
+			// When I run the blastradius command, Then it succeeds
+			Expect(cli.App().Run([]string{"story", "blastradius"})).To(Succeed())
+
+			// TODO: Maybe check the stdout and assert on that too
+		})
+
+		It("Should return an error if extra arguments are given", func() {
+			// Given an initialised metarepo with a story and a project added
+			Expect(cli.App().Run([]string{"story", "create", "test-story"})).To(Succeed())
+
+			// When I try to list the blastradius,
+			err := cli.App().Run([]string{"story", "blastradius", "test-story"})
+
+			// Then it returns an error
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(Equal(cli.ErrCommandTakesNoArguments))
+		})
+
+		It("Should return an error if not working on a story", func() {
+			// Given an initialised metarepo not on a story
+
+			// When I try to list the blastradius,
+			err := cli.App().Run([]string{"story", "blastradius"})
+
+			// Then it returns an error
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(Equal(cli.ErrNotWorkingOnAStory))
+		})
+	})
+
 	Describe("Add", func() {
 		It("Should add a project to a story", func() {
 			// Given an initialised metarepo with projects and a story
@@ -280,6 +319,27 @@ var _ = Describe("App", func() {
 
 			// And hashes are updated
 			Expect(s.Hashes).To(HaveKey("one"))
+		})
+
+		It("Should clone a project without adding it to the story when run with the --ci flag", func() {
+			// Given an initialised metarepo with a story
+			Expect(cli.App().Run([]string{"story", "create", "test-story"})).To(Succeed())
+			//bytes, _ := afero.ReadFile(fs, ".meta")
+
+			// And a remote repository that exists in 'all-projects'
+			Expect(fs.MkdirAll("external/remote", os.FileMode(0700))).To(Succeed())
+			command := exec.Command("git", "init", "--bare")
+			command.Dir = "external/remote"
+			_, err := command.CombinedOutput()
+			Expect(err).NotTo(HaveOccurred())
+
+			// When I add a project to the story with the --ci flag
+			Expect(cli.App().Run([]string{"story", "add", "two", "--ci"})).To(Succeed())
+
+			// Then the folder should be cloned
+			exists, err := afero.DirExists(fs, "remote")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(exists).To(BeTrue())
 		})
 
 		It("Should return an error if no arguments are given", func() {

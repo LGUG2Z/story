@@ -80,18 +80,8 @@ func LoadCmd(fs afero.Fs) cli.Command {
 			}
 
 			for project := range story.Projects {
-				exists, err := afero.DirExists(fs, project)
-				if err != nil {
+				if err := ensureProjectIsCloned(fs, story, project); err != nil {
 					return err
-				}
-
-				if !exists {
-					output, err := git.Clone(git.CloneOpts{Repository: story.AllProjects[project]})
-					if err != nil {
-						return err
-					}
-
-					printGitOutput(output, project)
 				}
 
 				output, err := git.CheckoutBranch(git.CheckoutBranchOpts{Branch: name, Project: project})
@@ -173,6 +163,44 @@ func ListCmd(fs afero.Fs) cli.Command {
 	}
 }
 
+func BlastRadiusCmd(fs afero.Fs) cli.Command {
+	return cli.Command{
+		Name:      "blastradius",
+		ShortName: "br",
+		Usage:     "Shows a list of current story's blast radius",
+		Action: func(c *cli.Context) error {
+			if !isStory {
+				return ErrNotWorkingOnAStory
+			}
+
+			if c.Args().Present() {
+				return ErrCommandTakesNoArguments
+			}
+
+			story, err := manifest.LoadStory(fs)
+			if err != nil {
+				return err
+			}
+
+			var brMap = make(map[string]bool)
+
+			for _, br := range story.BlastRadius {
+				for _, p := range br {
+					if !brMap[p] {
+						brMap[p] = true
+					}
+				}
+			}
+
+			for project := range brMap {
+				fmt.Println(project)
+			}
+
+			return nil
+		},
+	}
+}
+
 func ArtifactsCmd(fs afero.Fs) cli.Command {
 	return cli.Command{
 		Name:      "artifacts",
@@ -208,6 +236,7 @@ func AddCmd(fs afero.Fs) cli.Command {
 		Name:      "add",
 		ShortName: "a",
 		Usage:     "Adds a project to the current story",
+		Flags:     []cli.Flag{cli.BoolFlag{Name: "ci", Usage: "clone without modifying .meta"}},
 		Action: func(c *cli.Context) error {
 			if !isStory {
 				return ErrNotWorkingOnAStory
@@ -220,6 +249,16 @@ func AddCmd(fs afero.Fs) cli.Command {
 			story, err := manifest.LoadStory(fs)
 			if err != nil {
 				return err
+			}
+
+			if c.Bool("ci") {
+				for _, project := range c.Args() {
+					if err := ensureProjectIsCloned(fs, story, project); err != nil {
+						return err
+					}
+				}
+
+				return nil
 			}
 
 			for _, project := range c.Args() {
