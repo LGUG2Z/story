@@ -15,7 +15,9 @@ testing, container building and deployments when working with meta-repos contain
   * [Reset](#reset)
   * [List](#list)
   * [Artifacts](#artifacts)
+  * [Blast Radius](#blast-radius)
   * [Add](#add)
+    + [--ci Flag](#--ci-flag)
   * [Remove](#remove)
   * [Commit](#commit)
 
@@ -111,6 +113,10 @@ across the meta-repo will update the `hashes` key before making a final commit t
 `story artifacts` will:
 * Print a list of all projects that should be built and deployed in the current story
 
+## Blast Radius
+`story blastradius` will:
+* Print a list of all projects within the blast radius of the current story
+
 ## Add
 `story add [projects]` will:
 * Add the projects to the `.meta` file
@@ -118,6 +124,22 @@ across the meta-repo will update the `hashes` key before making a final commit t
 * Update the blast radius of the story
 * Update the commit hashes of projects in the story
 * Update `package.json` files to pin references to projects in the story to the story branch
+### --ci Flag
+`story add --ci [projects]` will attempt to clone a project in the meta-repo that may not be checked
+out for a given story. A specific use case that the `--ci` flag targets is running unit tests with
+for the entire blast radius of a story in CI tools. For example:
+
+```bash
+# check out the projects modified in the story
+story load story/new-navbar
+
+# hecks out projects not directly modified in the story, but within the blast radius,
+# without making changes to the .meta file
+story add --ci $(story blastradius)
+
+# run unit tests for all projects in the story and all projects within the blast radius
+find . -maxdepth 1 -type d -not -path "./.git" -not -path "." -exec bash -c "cd {} && yarn test" \;
+```
 
 ## Remove
 `story remove [projects]` will:
