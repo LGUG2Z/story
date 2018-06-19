@@ -80,6 +80,20 @@ func LoadCmd(fs afero.Fs) cli.Command {
 			}
 
 			for project := range story.Projects {
+				exists, err := afero.DirExists(fs, project)
+				if err != nil {
+					return err
+				}
+
+				if !exists {
+					output, err := git.Clone(git.CloneOpts{Repository: story.AllProjects[project]})
+					if err != nil {
+						return err
+					}
+
+					printGitOutput(output, project)
+				}
+
 				output, err := git.CheckoutBranch(git.CheckoutBranchOpts{Branch: name, Project: project})
 				if err != nil {
 					return err
