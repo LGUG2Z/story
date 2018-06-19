@@ -1,6 +1,7 @@
 package git
 
 import (
+	"fmt"
 	"os/exec"
 	"strings"
 )
@@ -51,7 +52,7 @@ func Commit(opts CommitOpts) (string, error) {
 
 	combinedOutput, err := command.CombinedOutput()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("%s: %s", err, combinedOutput)
 	}
 
 	return strings.TrimSpace(string(combinedOutput)), nil

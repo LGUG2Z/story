@@ -31,7 +31,7 @@ func CheckoutBranch(opts CheckoutBranchOpts) (string, error) {
 
 	combinedOutput, err := command.CombinedOutput()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("%s: %s", err, combinedOutput)
 	}
 
 	return strings.TrimSpace(string(combinedOutput)), nil
@@ -68,7 +68,7 @@ func DeleteBranch(opts DeleteBranchOpts) (string, error) {
 
 		combinedOutput, err := command.CombinedOutput()
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("%s: %s", err, combinedOutput)
 		}
 
 		outputs = append(outputs, strings.TrimSpace(string(combinedOutput)))
@@ -88,7 +88,7 @@ func DeleteBranch(opts DeleteBranchOpts) (string, error) {
 
 		combinedOutput, err := command.CombinedOutput()
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("%s: %s", err, combinedOutput)
 		}
 
 		outputs = append(outputs, strings.TrimSpace(string(combinedOutput)))
