@@ -55,10 +55,6 @@ var _ = Describe("App", func() {
 			// And I should have a story .meta file
 			_, err = manifest.LoadStory(fs)
 			Expect(err).NotTo(HaveOccurred())
-
-			// And I should have a global .meta.json file
-			_, err = manifest.LoadMetaOnTrunk(fs)
-			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("Should return an error if on trunk and a story name isn't supplied", func() {
@@ -89,6 +85,7 @@ var _ = Describe("App", func() {
 	Describe("Load", func() {
 		It("Should load the story branches", func() {
 			// Given an initialised metarepo with a story which is then reset
+			// TODO: Update the setup so there are projects within the story that can be asserted against later
 			Expect(cli.App().Run([]string{"story", "create", "test-story"})).To(Succeed())
 			_, err := git.Add(git.AddOpts{Files: []string{".meta"}})
 			Expect(err).NotTo(HaveOccurred())
@@ -134,6 +131,7 @@ var _ = Describe("App", func() {
 	Describe("Reset", func() {
 		It("Should reset if currently working on a story", func() {
 			// Given an initialised metarepo with a story
+			// TODO: Update the setup so there are projects within the story that can be asserted against later
 			Expect(cli.App().Run([]string{"story", "create", "test-story"})).To(Succeed())
 
 			// When I reset the story then it resets without error
