@@ -20,6 +20,7 @@ testing, container building and deployments when working with meta-repos contain
     + [--ci Flag](#--ci-flag)
   * [Remove](#remove)
   * [Commit](#commit)
+  * [Push](#push)
 
 # The .meta File
 There are two types of `.meta` files used by `story`, which are both supersets of the `.meta` file used by
@@ -164,3 +165,8 @@ find . -maxdepth 1 -type d -not -path "./.git" -not -path "." -exec bash -c "cd 
       https://github.com/SecretOrg/api/commit/ad4f419b7d65292ef28ab8d1d3ef4346a6bdebe4
       https://github.com/SecretOrg/lib-2/commit/e1f99366bcc71df8bccf6f3df66271a319c33240
 * Update `package.json` files to unpin references to projects in the story from the story branch
+
+## Push
+`story push` will:
+* Push local commits in all story projects to the story branch on remote `origin`
+* Push local commits on the meta-repo to the story branch on remote `origin`
