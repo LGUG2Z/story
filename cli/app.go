@@ -1,12 +1,9 @@
 package cli
 
 import (
-	"fmt"
-
 	"time"
 
 	"github.com/LGUG2Z/story/git"
-	"github.com/fatih/color"
 	"github.com/spf13/afero"
 	"github.com/urfave/cli"
 )
@@ -56,12 +53,8 @@ func App() *cli.App {
 		BlastRadiusCmd(fs),
 		ArtifactsCmd(fs),
 		CommitCmd(fs),
+		PushCmd(fs),
 	}
 
 	return app
-}
-
-func printGitOutput(output, project string) {
-	color.Green(project)
-	fmt.Println(output)
 }

@@ -1,10 +1,18 @@
 package cli
 
 import (
+	"fmt"
+
 	"github.com/LGUG2Z/story/git"
 	"github.com/LGUG2Z/story/manifest"
+	"github.com/fatih/color"
 	"github.com/spf13/afero"
 )
+
+func printGitOutput(output, project string) {
+	color.Green(project)
+	fmt.Println(output)
+}
 
 func ensureProjectIsCloned(fs afero.Fs, story *manifest.Story, project string) error {
 	exists, err := afero.DirExists(fs, project)

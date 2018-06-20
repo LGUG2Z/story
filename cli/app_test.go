@@ -324,7 +324,6 @@ var _ = Describe("App", func() {
 		It("Should clone a project without adding it to the story when run with the --ci flag", func() {
 			// Given an initialised metarepo with a story
 			Expect(cli.App().Run([]string{"story", "create", "test-story"})).To(Succeed())
-			//bytes, _ := afero.ReadFile(fs, ".meta")
 
 			// And a remote repository that exists in 'all-projects'
 			Expect(fs.MkdirAll("external/remote", os.FileMode(0700))).To(Succeed())
@@ -499,6 +498,88 @@ var _ = Describe("App", func() {
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(Equal(cli.ErrNotWorkingOnAStory))
 		})
+	})
 
+	Describe("Push", func() {
+		It("Should push commits that have not yet been pushed", func() {
+			// Given an initialised metarepo
+
+			// And a project locally checked out with a commit on master
+			Expect(fs.MkdirAll("one", os.FileMode(0700))).To(Succeed())
+			p := node.PackageJSON{}
+			b, err := json.Marshal(p)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(afero.WriteFile(fs, "one/package.json", b, os.FileMode(0666))).To(Succeed())
+
+			command := exec.Command("git", "init")
+			command.Dir = "one"
+			_, err = command.CombinedOutput()
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = git.Add(git.AddOpts{Project: "one", Files: []string{"package.json"}})
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = git.Commit(git.CommitOpts{Project: "one", Messages: []string{"initial commit"}})
+			Expect(err).NotTo(HaveOccurred())
+
+			// And that project has a remote 'origin'
+			Expect(fs.MkdirAll("external/remote", os.FileMode(0700))).To(Succeed())
+			command = exec.Command("git", "init", "--bare")
+			command.Dir = "external/remote"
+			_, err = command.CombinedOutput()
+			Expect(err).NotTo(HaveOccurred())
+
+			command = exec.Command("git", "remote", "add", "origin", "../external/remote")
+			command.Dir = "one"
+			_, err = command.CombinedOutput()
+			Expect(err).NotTo(HaveOccurred())
+
+			// And the meta-repo has a remote 'origin'
+			Expect(fs.MkdirAll("external/remote-meta", os.FileMode(0700))).To(Succeed())
+			command = exec.Command("git", "init", "--bare")
+			command.Dir = "external/remote-meta"
+			_, err = command.CombinedOutput()
+			Expect(err).NotTo(HaveOccurred())
+
+			command = exec.Command("git", "remote", "add", "origin", "external/remote-meta")
+			_, err = command.CombinedOutput()
+			Expect(err).NotTo(HaveOccurred())
+
+			// And I am working on a story with a project added
+			Expect(cli.App().Run([]string{"story", "create", "test-story"})).To(Succeed())
+			Expect(cli.App().Run([]string{"story", "add", "one"})).To(Succeed())
+
+			// And there is a commit waiting to be pushed
+			Expect(afero.WriteFile(fs, "one/bla", []byte{}, os.FileMode(0666))).To(Succeed())
+			_, err = git.Add(git.AddOpts{Project: "one", Files: []string{"bla"}})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cli.App().Run([]string{"story", "commit", "-m", "test commit"})).To(Succeed())
+
+			//// When I push the commit it should succeed
+			Expect(cli.App().Run([]string{"story", "push"})).To(Succeed())
+		})
+
+		It("Should return an error if extra arguments are given", func() {
+			// Given an initialised metarepo with a story
+			Expect(cli.App().Run([]string{"story", "create", "test-story"})).To(Succeed())
+
+			// When I try to push
+			err := cli.App().Run([]string{"story", "push", "test-story"})
+
+			// Then it returns an error
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(Equal(cli.ErrCommandTakesNoArguments))
+		})
+
+		It("Should return an error if not working on a story", func() {
+			// Given an initialised metarepo not on a story
+
+			// When I try to make a story commit
+			err := cli.App().Run([]string{"story", "push"})
+
+			// Then it returns an error
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(Equal(cli.ErrNotWorkingOnAStory))
+		})
 	})
 })
