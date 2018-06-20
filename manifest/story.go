@@ -18,9 +18,9 @@ type Story struct {
 	Orgranisation string              `json:"organisation"`
 	Projects      map[string]string   `json:"projects,omitempty"`
 	Hashes        map[string]string   `json:"hashes,omitempty"`
-	BlastRadius   map[string][]string `json:"blast-radius,omitempty"`
+	BlastRadius   map[string][]string `json:"blastRadius,omitempty"`
 	Artifacts     map[string]bool     `json:"artifacts,omitempty"`
-	AllProjects   map[string]string   `json:"all-projects"`
+	AllProjects   map[string]string   `json:"allProjects"`
 }
 
 func NewStory(name string, meta *Meta) *Story {

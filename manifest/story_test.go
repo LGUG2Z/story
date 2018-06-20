@@ -72,13 +72,13 @@ var _ = Describe("Story", func() {
   "projects": {
     "one": "git@github.com:test-org/one.git"
   },
-  "blast-radius": {
+  "blastRadius": {
     "one": null
   },
   "artifacts": {
     "one": true
   },
-  "all-projects": null
+  "allProjects": null
 }`
 			Expect(actual).To(Equal(expected))
 		})
@@ -89,10 +89,10 @@ var _ = Describe("Story", func() {
 			// Given a valid story file on an fs
 			fs := afero.NewMemMapFs()
 			b := []byte(`{
-  "all-projects": {
+  "allProjects": {
     "one": "git@github.com:test-org/one.git"
   },
-  "blast-radius": {
+  "blastRadius": {
     "one": null
   },
   "artifacts": {
@@ -117,7 +117,7 @@ var _ = Describe("Story", func() {
 			// Given a valid story file on an fs
 			fs := afero.NewMemMapFs()
 			b := []byte(`{
-  "blast-radius": {
+  "blastRadius": {
     "one": null
   },
   "artifacts": {

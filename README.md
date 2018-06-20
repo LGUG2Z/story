@@ -61,7 +61,7 @@ The `.meta` file for stories includes a number of extra keys on top of those int
     "api": "c917d416366a04f2ec62c2e8aaee5bc740d8c6aa",
     "lib-2": "6bbe39ebe169c46eee7b2a6bc392e0b37e397a0e"
   },
-  "blast-radius": {
+  "blastRadius": {
     "api": null,
     "lib-2": ["api", "app"]
   },
@@ -69,7 +69,7 @@ The `.meta` file for stories includes a number of extra keys on top of those int
     "api": true,
     "app": true
   },
-  "all-projects": {
+  "allProjects": {
     "api": "git@github.com:SecretOrg/api.git",
     "app": "git@github.com:SecretOrg/app.git",
     "lib-1": "git@github.com:SecretOrg/lib-1.git",
@@ -83,12 +83,12 @@ The `.meta` file for stories includes a number of extra keys on top of those int
 
 `hashes` refers to the current commit hashes of each project at the time of a commit to the meta-repo.
 
-`blast-radius` refers to projects in the meta-repo that can be impacted by made changes in the scope of the current story.
+`blastRadius` refers to projects in the meta-repo that can be impacted by made changes in the scope of the current story.
 
-`all-projects` refers to the complete list of projects in the meta-repo.
+`allProjects` refers to the complete list of projects in the meta-repo.
 
 This latter file is automatically generated and maintained by `story` commands. For example, adding or removing a project
-to a story will update the `projects`, `hashes`, `blast-radius` and `artifacts` keys accordingly, and making a commit
+to a story will update the `projects`, `hashes`, `blastRadius` and `artifacts` keys accordingly, and making a commit
 across the meta-repo will update the `hashes` key before making a final commit to the meta-repo.
 
 # Commands
