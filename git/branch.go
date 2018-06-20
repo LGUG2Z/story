@@ -57,11 +57,7 @@ func DeleteBranch(opts DeleteBranchOpts) (string, error) {
 	var args []string
 
 	if opts.Local {
-		args = append(args, "branch")
-		args = append(args, "--delete")
-		args = append(args, "--force")
-		args = append(args, opts.Branch)
-
+		args = append(args, "branch", "--delete", "--force", opts.Branch)
 		command := exec.Command("git", args...)
 		if opts.Project != "" {
 			command.Dir = opts.Project
@@ -76,11 +72,7 @@ func DeleteBranch(opts DeleteBranchOpts) (string, error) {
 	}
 
 	if opts.Remote {
-		args = append(args, "push")
-		args = append(args, "origin")
-		args = append(args, "--delete")
-		args = append(args, opts.Branch)
-
+		args = append(args, "push", "origin", "--delete", opts.Branch)
 		command := exec.Command("git", args...)
 		if opts.Project != "" {
 			command.Dir = opts.Project
