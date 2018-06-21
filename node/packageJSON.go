@@ -10,16 +10,33 @@ import (
 )
 
 type PackageJSON struct {
-	Name            string            `json:"name"`
-	Version         string            `json:"version"`
-	Description     string            `json:"description"`
-	Main            string            `json:"main"`
-	Bugs            map[string]string `json:"bugs,omitempty"`
-	Scripts         map[string]string `json:"scripts,omitempty"`
-	Dependencies    map[string]string `json:"dependencies,omitempty"`
-	DevDependencies map[string]string `json:"devDependencies,omitempty"`
-	Private         bool              `json:"private,omitempty"`
-	License         string            `json:"license,omitempty"`
+	Name            string              `json:"name"`
+	Description     string              `json:"description"`
+	Repository      map[string]string   `json:"repository"`
+	Version         string              `json:"version"`
+	Author          string              `json:"author"`
+	Dependencies    map[string]string   `json:"dependencies,omitempty"`
+	DevDependencies map[string]string   `json:"devDependencies,omitempty"`
+	Scripts         map[string]string   `json:"scripts,omitempty"`
+	LintStaged      map[string][]string `json:"lint-staged,omitempty"`
+	Engines         map[string]string   `json:"engines,omitempty"`
+	Jest            struct {
+		CollectCoverageFrom     []string          `json:"collectCoverageFrom,omitempty"`
+		SetupFiles              []string          `json:"setupFiles,omitempty"`
+		TestMatch               []string          `json:"testMatch,omitempty"`
+		TestEnvironment         string            `json:"testEnvironment,omitempty"`
+		TestURL                 string            `json:"testURL,omitempty"`
+		Transform               map[string]string `json:"transform,omitempty"`
+		TransformIgnorePatterns []string          `json:"transformIgnorePatterns,omitempty"`
+		ModuleNameMapper        map[string]string `json:"moduleNameMapper,omitempty"`
+		ModuleFileExtensions    []string          `json:"moduleFileExtensions,omitempty"`
+	} `json:"jest,omitempty"`
+	Babel        map[string][]string `json:"babel,omitempty"`
+	EslintConfig map[string]string   `json: eslintConfig,omitempty`
+	Main         string              `json:"main,omitempty"`
+	Bugs         map[string]string   `json:"bugs,omitempty"`
+	Private      bool                `json:"private,omitempty"`
+	License      string              `json:"license,omitempty"`
 }
 
 func (p *PackageJSON) Load(fs afero.Fs, project string) error {
