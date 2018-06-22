@@ -60,13 +60,17 @@ type JestConfig struct {
 	Browser                      bool                              `json:"browser,omitempty"`
 	Bail                         bool                              `json:"bail,omitempty"`
 	CacheDirectory               string                            `json:"cacheDirectory,omitempty"`
+	ClearMocks                   bool                              `json:"clearMocks,omitempty"`
 	CollectCoverage              bool                              `json:"collectCoverage,omitempty"`
 	CollectCoverageFrom          []string                          `json:"collectCoverageFrom,omitempty"`
 	CoverageDirectory            string                            `json:"coverageDirectory,omitempty"`
 	CoveragePathIgnorePatterns   []string                          `json:"coveragePathIgnorePatterns,omitempty"`
 	CoverageReporters            []string                          `json:"coverageReporters,omitempty"`
 	CoverageThreshold            map[string]map[string]interface{} `json:"coverageThreshold,omitempty"`
+	ForceCoverageMatch           []string                          `json:"forceCoverageMatch,omitempty"`
 	Globals                      map[string]interface{}            `json:"globals,omitempty"`
+	GlobalSetup                  string                            `json:"globalSetup,omitempty"`
+	GlobalTeardown               string                            `json:"globalTeardown,omitempty"`
 	MocksPattern                 string                            `json:"mocksPattern,omitempty"`
 	ModuleFileExtensions         []string                          `json:"moduleFileExtensions,omitempty"`
 	ModuleDirectories            []string                          `json:"moduleDirectories,omitempty"`
@@ -74,14 +78,23 @@ type JestConfig struct {
 	ModulePathIgnorePatterns     []string                          `json:"modulePathIgnorePatterns,omitempty"`
 	ModulePaths                  []string                          `json:"modulePaths,omitempty"`
 	Notify                       bool                              `json:"notify,omitempty"`
+	NotifyMode                   string                            `json:"notifyMode,omitempty"`
 	Preset                       string                            `json:"preset,omitempty"`
+	Projects                     []string                          `json:"projects,omitempty"`
+	Reporters                    []string                          `json:"reporters,omitempty"`
 	ResetMocks                   bool                              `json:"resetMocks,omitempty"`
 	ResetModules                 bool                              `json:"resetModules,omitempty"`
+	Resolver                     string                            `json:"resolver,omitempty"`
+	RestoreMocks                 bool                              `json:"restoreMocks,omitempty"`
 	RootDir                      string                            `json:"rootDir,omitempty"`
+	Roots                        []string                          `json:"roots,omitempty"`
+	Runner                       string                            `json:"runner,omitempty"`
 	SetupFiles                   []string                          `json:"setupFiles,omitempty"`
-	SetupTestFrameworkScriptFile string                            `json:"setupTestFrameworkScriptFiles,omitempty"`
+	SetupTestFrameworkScriptFile string                            `json:"setupTestFrameworkScriptFile,omitempty"`
 	SnapshotSerializers          []string                          `json:"snapshotSerializers,omitempty"`
 	TestEnvironment              string                            `json:"testEnvironment,omitempty"`
+	TestEnvironmentOptions       map[string]string                 `json:"testEnvironmentOptions,omitempty"`
+	TestMatch                    []string                          `json:"testMatch,omitempty"`
 	TestPathDirs                 []string                          `json:"testPathDirs,omitempty"`
 	TestPathIgnorePatterns       []string                          `json:"testPathIgnorePatterns,omitempty"`
 	TestRegex                    string                            `json:"testRegex,omitempty"`
@@ -93,6 +106,7 @@ type JestConfig struct {
 	TransformIgnorePatterns      []string                          `json:"transformIgnorePatterns,omitempty"`
 	UnmockedModulePathPatterns   []string                          `json:"unmockedModulePathPatterns,omitempty"`
 	Verbose                      bool                              `json:"verbose,omitempty"`
+	WatchPathIgnorePatterns      []string                          `json:"watchPatchIgnorePatterns,omitempty"`
 }
 
 func (p *PackageJSON) Load(fs afero.Fs, project string) error {
