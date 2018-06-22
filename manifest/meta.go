@@ -3,13 +3,25 @@ package manifest
 import (
 	"encoding/json"
 
+	"os"
+
 	"github.com/spf13/afero"
 )
 
 type Meta struct {
-	Artifacts     map[string]bool   `json:"artifacts,omitempty"`
-	Orgranisation string            `json:"organisation,omitempty"`
-	Projects      map[string]string `json:"projects,omitempty"`
+	Artifacts    map[string]bool   `json:"artifacts,omitempty"`
+	Organisation string            `json:"organisation,omitempty"`
+	Projects     map[string]string `json:"projects,omitempty"`
+}
+
+// TODO: Add Test
+func (m *Meta) Write(fs afero.Fs) error {
+	bytes, err := json.MarshalIndent(m, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	return afero.WriteFile(fs, ".meta", bytes, os.FileMode(0666))
 }
 
 func LoadMetaOnTrunk(fs afero.Fs) (*Meta, error) {

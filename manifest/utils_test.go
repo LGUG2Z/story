@@ -116,8 +116,8 @@ func (b *MetaBuilder) Artifacts(artifacts ...string) *MetaBuilder {
 	return b
 }
 
-func (b *MetaBuilder) Orgranisation(orgranisation string) *MetaBuilder {
-	b.meta.Orgranisation = orgranisation
+func (b *MetaBuilder) Organisation(orgranisation string) *MetaBuilder {
+	b.meta.Organisation = orgranisation
 	return b
 }
 
@@ -125,7 +125,7 @@ func (b *MetaBuilder) Projects(projects ...string) *MetaBuilder {
 	b.meta.Projects = make(map[string]string)
 
 	for _, project := range projects {
-		b.meta.Projects[project] = fmt.Sprintf("git@github.com:%s/%s.git", b.meta.Orgranisation, project)
+		b.meta.Projects[project] = fmt.Sprintf("git@github.com:%s/%s.git", b.meta.Organisation, project)
 	}
 
 	return b

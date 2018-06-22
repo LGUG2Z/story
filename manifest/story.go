@@ -27,7 +27,7 @@ func NewStory(name string, meta *Meta) *Story {
 	return &Story{
 		Name:          name,
 		Artifacts:     meta.Artifacts,
-		Orgranisation: meta.Orgranisation,
+		Orgranisation: meta.Organisation,
 		AllProjects:   meta.Projects,
 	}
 }
@@ -141,4 +141,14 @@ func (s *Story) RemoveFromManifest(project string) {
 	}
 
 	delete(s.Projects, project)
+}
+
+// TODO: Add test
+func (s *Story) WriteToLocation(fs afero.Fs, location string) error {
+	bytes, err := json.MarshalIndent(s, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	return afero.WriteFile(fs, location, bytes, os.FileMode(0666))
 }

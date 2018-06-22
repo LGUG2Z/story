@@ -7,6 +7,8 @@ import (
 
 	"strings"
 
+	"os"
+
 	"github.com/LGUG2Z/blastradius/blastradius"
 	"github.com/LGUG2Z/story/git"
 	"github.com/LGUG2Z/story/manifest"
@@ -430,6 +432,10 @@ func CommitCmd(fs afero.Fs) cli.Command {
 
 			// Update the hashes in the meta file and write it out
 			hashes, err := story.GetCommitHashes(fs)
+			if err != nil {
+				return err
+			}
+
 			story.Hashes = hashes
 			if err := story.Write(fs); err != nil {
 				return err
@@ -484,7 +490,7 @@ func PushCmd(fs afero.Fs) cli.Command {
 				return err
 			}
 
-			// Commit in all the projects
+			// Push in all the projects
 			for project := range story.Projects {
 				output, err := git.Push(git.PushOpts{Remote: "origin", Branch: story.Name, Project: project})
 				if err != nil {
@@ -496,6 +502,121 @@ func PushCmd(fs afero.Fs) cli.Command {
 
 			// Commit on the metarepo
 			output, err := git.Push(git.PushOpts{Branch: story.Name, Remote: "origin"})
+			if err != nil {
+				return err
+			}
+
+			printGitOutput(output, "metarepo")
+
+			return nil
+		}),
+	}
+}
+
+// TODO: Add tests
+func PrepareCmd(fs afero.Fs) cli.Command {
+	return cli.Command{
+		Name:  "prepare",
+		Usage: "Prepares a story for merges to trunk",
+		Action: cli.ActionFunc(func(c *cli.Context) error {
+			if !isStory {
+				return ErrNotWorkingOnAStory
+			}
+
+			if c.Args().Present() {
+				return ErrCommandTakesNoArguments
+			}
+
+			story, err := manifest.LoadStory(fs)
+			if err != nil {
+				return err
+			}
+
+			mergePrepMessage := fmt.Sprintf("Preparing story %s for merge", story.Name)
+
+			// Unpin dependencies in package.json files from branch
+			for project := range story.Projects {
+				p := node.PackageJSON{}
+				if err := p.Load(fs, project); err != nil {
+					return err
+				}
+
+				p.ResetPrivateDependencyBranchesToMaster(story.Name)
+				p.Write(fs, project)
+
+				// Stage the modified package.json file
+				_, err := git.Add(git.AddOpts{Project: project, Files: []string{"package.json"}})
+				if err != nil {
+					return err
+				}
+
+				// Commit the modified package.json file
+				output, err := git.Commit(git.CommitOpts{Project: project, Messages: []string{mergePrepMessage}})
+				if err != nil {
+					return err
+				}
+
+				printGitOutput(output, project)
+			}
+
+			// Update the story hashes
+			hashes, err := story.GetCommitHashes(fs)
+			if err != nil {
+				return err
+			}
+
+			story.Hashes = hashes
+
+			// Create the story folder if it doesn't exist
+			exists, err := afero.DirExists(fs, "story")
+			if err != nil {
+				return err
+			}
+
+			if !exists {
+				if err := fs.Mkdir("story", os.FileMode(0700)); err != nil {
+					return err
+				}
+			}
+
+			// Write the story .meta to the story folder and stage the file
+			storyNameWithoutSlash := strings.Replace(story.Name, "/", "-", 1)
+			if err := story.WriteToLocation(fs, fmt.Sprintf("story/%s.json", storyNameWithoutSlash)); err != nil {
+				return err
+			}
+
+			_, err = git.Add(git.AddOpts{Project: "story", Files: []string{fmt.Sprintf("%s.json", storyNameWithoutSlash)}})
+			if err != nil {
+				return err
+			}
+
+			// Recreate the .meta from the story .meta
+			m := manifest.Meta{Projects: story.AllProjects, Artifacts: story.Artifacts, Organisation: story.Orgranisation}
+			for artifact, _ := range m.Artifacts {
+				m.Artifacts[artifact] = false
+			}
+
+			// Write the reconstructed .meta to the metarepo folder and stage the file
+			if err := m.Write(fs); err != nil {
+				return err
+			}
+
+			_, err = git.Add(git.AddOpts{Files: []string{".meta"}})
+			if err != nil {
+				return err
+			}
+
+			// Format the hashes to the GitHub format to link to a specific commit
+			var hashMessages []string
+			for project, hash := range hashes {
+				commitUrl := fmt.Sprintf("https://github.com/%s/%s/commit/%s", story.Orgranisation, project, hash)
+				hashMessages = append(hashMessages, commitUrl)
+			}
+
+			sort.Strings(hashMessages)
+
+			// Commit on the metarepo
+			output, err := git.Commit(git.CommitOpts{Messages: []string{mergePrepMessage, strings.Join(hashMessages, "\n")}})
 			if err != nil {
 				return err
 			}

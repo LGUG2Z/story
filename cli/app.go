@@ -54,6 +54,7 @@ func App() *cli.App {
 		ArtifactsCmd(fs),
 		CommitCmd(fs),
 		PushCmd(fs),
+		PrepareCmd(fs),
 	}
 
 	return app

@@ -22,7 +22,7 @@ var _ = Describe("Story", func() {
 		It("Should create a story using the appropriate data from the meta file", func() {
 			// Given a meta file
 			m := NewMetaBuilder().
-				Orgranisation("test-org").
+				Organisation("test-org").
 				Projects("one", "two").
 				Artifacts("one").
 				Build()
