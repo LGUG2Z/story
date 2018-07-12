@@ -452,6 +452,24 @@ func CommitCmd(fs afero.Fs) cli.Command {
 			sort.Strings(hashMessages)
 			messages = append(messages, strings.Join(hashMessages, "\n"))
 
+			// Add the blast radius to the slice for git commit messages
+			var brMap = make(map[string]bool)
+
+			for _, br := range story.BlastRadius {
+				for _, p := range br {
+					if !brMap[p] {
+						brMap[p] = true
+					}
+				}
+			}
+
+			var brSlice []string
+			for project := range brMap {
+				brSlice = append(brSlice, project)
+			}
+
+			messages = append(messages, fmt.Sprintf("Blast Radius: %s", strings.Join(brSlice, " ")))
+
 			// Stage the story file
 			output, err := git.Add(git.AddOpts{Files: []string{".meta"}})
 			if err != nil {
