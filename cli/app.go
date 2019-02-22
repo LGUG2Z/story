@@ -30,6 +30,7 @@ func App() *cli.App {
 	app.Usage = "A workflow tool for implementing stories across a node meta-repo"
 	app.EnableBashCompletion = true
 	app.Compiled = time.Now()
+	app.Version = Version
 	app.Authors = []cli.Author{{
 		Name:  "J. Iqbal",
 		Email: "jade@beamery.com",
