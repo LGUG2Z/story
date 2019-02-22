@@ -147,7 +147,7 @@ var _ = Describe("Story", func() {
 
 			// When I add a project to that story
 			allProjects := make(map[string]string)
-			allProjects["test-project"] = "test"
+			allProjects["test-project"] = "git@github.com:test-org/test-project.git"
 			Expect(s.AddToManifest(allProjects, "test-project")).To(Succeed())
 
 			// It should update the story
