@@ -397,6 +397,57 @@ func RemoveCmd(fs afero.Fs) cli.Command {
 	}
 }
 
+func PinCmd(fs afero.Fs) cli.Command {
+	return cli.Command{
+		Name:  "pin",
+		Usage: "Pins code in the current story",
+		Action: cli.ActionFunc(func(c *cli.Context) error {
+			if !isStory {
+				return ErrNotWorkingOnAStory
+			}
+
+			if c.Args().Present() {
+				return ErrCommandTakesNoArguments
+			}
+
+			story, err := manifest.LoadStory(fs)
+			if err != nil {
+				return err
+			}
+
+			var projectList []string
+			for project := range story.Projects {
+				projectList = append(projectList, project)
+			}
+
+			// Update all of the package.json files where any other added project is used
+			for project := range story.Projects {
+				p := node.PackageJSON{}
+				if err := p.Load(fs, project); err != nil {
+					return err
+				}
+
+				p.SetPrivateDependencyBranchesToCommitHashes(story, projectList...)
+				p.Write(fs, project)
+
+				_, err := git.Add(git.AddOpts{Files: []string{"package.json"}, Project: project})
+				if err != nil {
+					return err
+				}
+
+				output, err := git.Diff(project)
+				if err != nil {
+					return err
+				}
+
+				printGitOutput(output, project)
+			}
+
+			return nil
+		}),
+	}
+}
+
 func CommitCmd(fs afero.Fs) cli.Command {
 	return cli.Command{
 		Name:      "commit",
@@ -444,6 +495,7 @@ func CommitCmd(fs afero.Fs) cli.Command {
 			// Format the hashes to the GitHub format to link to a specific commit
 			var hashMessages []string
 			for project, hash := range hashes {
+				// TODO: switch depending on GitHub or GitLab for now. Maybe more later
 				commitUrl := fmt.Sprintf("https://github.com/%s/%s/commit/%s", story.Orgranisation, project, hash)
 				hashMessages = append(hashMessages, commitUrl)
 			}

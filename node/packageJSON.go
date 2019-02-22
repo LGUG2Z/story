@@ -142,6 +142,15 @@ func (p *PackageJSON) setPrivateDependencyBranchToStory(dependency, story string
 	}
 }
 
+func (p *PackageJSON) setPrivateDependencyBranchToCommitHash(dependency, commitHash string) {
+	// TODO: Update this to strip out any commit hashes
+	if strings.Contains(p.Dependencies[dependency], ".git") {
+		// Append #story-branch-name to the current git+ssh string
+		s := strings.Split(p.Dependencies[dependency], "#")
+		p.Dependencies[dependency] = fmt.Sprintf("%s#%s", s[0], commitHash)
+	}
+}
+
 func (p *PackageJSON) ResetPrivateDependencyBranchesToMaster(story string) {
 	storyBranch := fmt.Sprintf("#%s", story)
 	for pkg, src := range p.Dependencies {
@@ -178,6 +187,14 @@ func (p *PackageJSON) SetPrivateDependencyBranchesToStory(story string, projects
 	for _, project := range projects {
 		if _, exists := p.Dependencies[project]; exists {
 			p.setPrivateDependencyBranchToStory(project, story)
+		}
+	}
+}
+
+func (p *PackageJSON) SetPrivateDependencyBranchesToCommitHashes(story *manifest.Story, projects ...string) {
+	for _, project := range projects {
+		if _, exists := p.Dependencies[project]; exists {
+			p.setPrivateDependencyBranchToStory(project, story.Hashes[project])
 		}
 	}
 }

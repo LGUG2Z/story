@@ -66,6 +66,7 @@ func App() *cli.App {
 		ArtifactsCmd(fs),
 		CommitCmd(fs),
 		PushCmd(fs),
+		PinCmd(fs),
 		PrepareCmd(fs),
 	}
 
