@@ -11,14 +11,14 @@ K := $(foreach exec,$(EXECUTABLES),\
 
 ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 
-BINARY=rae
+BINARY=story
 VERSION=`cat VERSION`
 COMMIT=`git rev-parse HEAD`
 PLATFORMS=darwin linux
 ARCHITECTURES=amd64
 
 # Setup linker flags option for build that interoperate with variable names in src code
-LDFLAGS=-ldflags "-X github.com/LGUG2Z/rae/cli.Version=${VERSION} -X github.com/LGUG2Z/rae/cli.Commit=${COMMIT}"
+LDFLAGS=-ldflags "-X github.com/LGUG2Z/story/cli.Version=${VERSION} -X github.com/LGUG2Z/story/cli.Commit=${COMMIT}"
 
 default: build
 
