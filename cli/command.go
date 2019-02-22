@@ -536,6 +536,7 @@ func PrepareCmd(fs afero.Fs) cli.Command {
 	return cli.Command{
 		Name:  "prepare",
 		Usage: "Prepares a story for merges to trunk",
+		Flags: []cli.Flag{cli.BoolFlag{Name: "hash", Usage: "prepare with commit hashes"}},
 		Action: cli.ActionFunc(func(c *cli.Context) error {
 			if !isStory {
 				return ErrNotWorkingOnAStory
@@ -559,7 +560,12 @@ func PrepareCmd(fs afero.Fs) cli.Command {
 					return err
 				}
 
-				p.ResetPrivateDependencyBranchesToMaster(story.Name)
+				if c.Bool("hash") {
+					p.ResetPrivateDependencyBranchesToCommitHash(story)
+				} else {
+					p.ResetPrivateDependencyBranchesToMaster(story.Name)
+				}
+
 				p.Write(fs, project)
 
 				// Stage the modified package.json file

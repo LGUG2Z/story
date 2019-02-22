@@ -100,17 +100,21 @@ var _ = Describe("PackageJSON", func() {
 	Describe("Updating dependency branches", func() {
 		It("Should update only the dependencies of projects in allProjects", func() {
 			// Given a map of all projects and story projects
-			projects := []string{"one"}
+			projects := []string{"one", "three"}
 
 			// And an unmarshalled package.json file
-			b := packageJSONWithDependencies("one", "two")
+			b := packageJSONWithDependencies("one", "two", "three")
 			Expect(json.Unmarshal(b, &p)).To(Succeed())
+			p.Dependencies["one"] = "git+ssh://git@github.com:TestOrg/one.git#somegithash123"
 
 			// When I update the dependencies to the story branch
 			p.SetPrivateDependencyBranchesToStory("test-story", projects...)
 
 			// Then the project in allProjects should be updated
 			Expect(p.Dependencies["one"]).To(Equal("git+ssh://git@github.com:TestOrg/one.git#test-story"))
+
+			// If the project doesn't have a hash already, it should be split correctly
+			Expect(p.Dependencies["three"]).To(Equal("git+ssh://git@github.com:TestOrg/three.git#test-story"))
 
 			// But the project not in allProjects should not be updated
 			Expect(p.Dependencies["two"]).To(Equal("git+ssh://git@github.com:TestOrg/two.git"))
