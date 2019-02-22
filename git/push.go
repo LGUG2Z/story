@@ -39,7 +39,7 @@ func Push(opts PushOpts) (string, error) {
 	}
 
 	var args []string
-	args = append(args, "push", opts.Remote, opts.Branch)
+	args = append(args, "push", "-u", opts.Remote, opts.Branch)
 
 	command := exec.Command("git", args...)
 	if opts.Project != "" {
