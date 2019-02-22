@@ -28,8 +28,8 @@ brew:
     system "#{bin}/story --version"
   install: |
     bin.install "story"
-    bash_completion.install "bash_autocomplete" => "rae"
-    zsh_completion.install "zsh_autocomplete" => "_rae"
+    bash_completion.install "bash_autocomplete" => "story"
+    zsh_completion.install "zsh_autocomplete" => "_story"
 checksum:
   name_template: 'checksums.txt'
 
