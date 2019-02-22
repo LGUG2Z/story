@@ -3,6 +3,8 @@ package cli
 import (
 	"time"
 
+	"fmt"
+
 	"github.com/LGUG2Z/story/git"
 	"github.com/spf13/afero"
 	"github.com/urfave/cli"
@@ -11,7 +13,16 @@ import (
 var isStory bool
 var trunk string
 
+var (
+	Version string
+	Commit  string
+)
+
 func App() *cli.App {
+	cli.VersionPrinter = func(c *cli.Context) {
+		fmt.Printf("story version %s (commit %s)\n", c.App.Version, Commit)
+	}
+
 	fs := afero.NewOsFs()
 	app := cli.NewApp()
 

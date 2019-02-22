@@ -610,7 +610,7 @@ func PrepareCmd(fs afero.Fs) cli.Command {
 
 			// Recreate the .meta from the story .meta
 			m := manifest.Meta{Projects: story.AllProjects, Artifacts: story.Artifacts, Organisation: story.Orgranisation}
-			for artifact, _ := range m.Artifacts {
+			for artifact := range m.Artifacts {
 				m.Artifacts[artifact] = false
 			}
 

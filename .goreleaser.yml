@@ -1,0 +1,44 @@
+project_name: rae
+
+builds:
+- env:
+  - CGO_ENABLED=0
+  binary: story
+  ldflags:
+   - -X github.com/LGUG2Z/story/cli.Version={{ .Version }} -X github.com/LGUG2Z/story/cli.Commit={{ .Commit }}
+  goarch:
+    - amd64
+
+archive:
+  files:
+    - bash_autocomplete
+    - zsh_autocomplete
+
+brew:
+  name: story
+  github:
+    owner: LGUG2Z
+    name: homebrew-tap
+  folder: Formula
+  homepage: "https://github.com/LGUG2Z/story"
+  description: "A workflow tool for implementing stories across a node meta-repo"
+  dependencies:
+  - docker
+  test: |
+    system "#{bin}/story --version"
+  install: |
+    bin.install "story"
+    bash_completion.install "bash_autocomplete"
+    zsh_completion.install "zsh_autocomplete"
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ .Tag }}-snapshot"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+    - '^docs:'
+    - '^test:'
