@@ -430,17 +430,7 @@ func PinCmd(fs afero.Fs) cli.Command {
 				p.SetPrivateDependencyBranchesToCommitHashes(story, projectList...)
 				p.Write(fs, project)
 
-				_, err := git.Add(git.AddOpts{Files: []string{"package.json"}, Project: project})
-				if err != nil {
-					return err
-				}
-
-				output, err := git.Diff(project)
-				if err != nil {
-					return err
-				}
-
-				printGitOutput(output, project)
+				printGitOutput("package.json updated", project)
 			}
 
 			return nil
@@ -588,7 +578,6 @@ func PrepareCmd(fs afero.Fs) cli.Command {
 	return cli.Command{
 		Name:  "prepare",
 		Usage: "Prepares a story for merges to trunk",
-		Flags: []cli.Flag{cli.BoolFlag{Name: "hash", Usage: "prepare with commit hashes"}},
 		Action: cli.ActionFunc(func(c *cli.Context) error {
 			if !isStory {
 				return ErrNotWorkingOnAStory
@@ -603,37 +592,7 @@ func PrepareCmd(fs afero.Fs) cli.Command {
 				return err
 			}
 
-			mergePrepMessage := fmt.Sprintf("Preparing story %s for merge", story.Name)
-
-			// Unpin dependencies in package.json files from branch
-			for project := range story.Projects {
-				p := node.PackageJSON{}
-				if err := p.Load(fs, project); err != nil {
-					return err
-				}
-
-				if c.Bool("hash") {
-					p.ResetPrivateDependencyBranchesToCommitHash(story)
-				} else {
-					p.ResetPrivateDependencyBranchesToMaster(story.Name)
-				}
-
-				p.Write(fs, project)
-
-				// Stage the modified package.json file
-				_, err := git.Add(git.AddOpts{Project: project, Files: []string{"package.json"}})
-				if err != nil {
-					return err
-				}
-
-				// Commit the modified package.json file
-				output, err := git.Commit(git.CommitOpts{Project: project, Messages: []string{mergePrepMessage}})
-				if err != nil {
-					return err
-				}
-
-				printGitOutput(output, project)
-			}
+			mergePrepMessage := fmt.Sprintf("Preparing %s for merge", story.Name)
 
 			// Update the story hashes
 			hashes, err := story.GetCommitHashes(fs)

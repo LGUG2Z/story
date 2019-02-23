@@ -22,8 +22,6 @@ brew:
   folder: Formula
   homepage: "https://github.com/LGUG2Z/story"
   description: "A workflow tool for implementing stories across a node meta-repo"
-  dependencies:
-  - docker
   test: |
     system "#{bin}/story --version"
   install: |
