@@ -139,9 +139,8 @@ func ResetCmd(fs afero.Fs) cli.Command {
 
 func ListCmd(fs afero.Fs) cli.Command {
 	return cli.Command{
-		Name:      "list",
-		ShortName: "ls",
-		Usage:     "Shows a list of projects added to the current story",
+		Name:  "list",
+		Usage: "Shows a list of projects added to the current story",
 		Action: func(c *cli.Context) error {
 			if !isStory {
 				return ErrNotWorkingOnAStory
@@ -167,9 +166,8 @@ func ListCmd(fs afero.Fs) cli.Command {
 
 func BlastRadiusCmd(fs afero.Fs) cli.Command {
 	return cli.Command{
-		Name:      "blastradius",
-		ShortName: "br",
-		Usage:     "Shows a list of current story's blast radius",
+		Name:  "blastradius",
+		Usage: "Shows a list of current story's blast radius",
 		Action: func(c *cli.Context) error {
 			if !isStory {
 				return ErrNotWorkingOnAStory
@@ -205,9 +203,8 @@ func BlastRadiusCmd(fs afero.Fs) cli.Command {
 
 func ArtifactsCmd(fs afero.Fs) cli.Command {
 	return cli.Command{
-		Name:      "artifacts",
-		ShortName: "art",
-		Usage:     "Shows a list of artifacts to be built and deployed for the current story",
+		Name:  "artifacts",
+		Usage: "Shows a list of artifacts to be built and deployed for the current story",
 		Action: func(c *cli.Context) error {
 			if !isStory {
 				return ErrNotWorkingOnAStory
@@ -235,10 +232,9 @@ func ArtifactsCmd(fs afero.Fs) cli.Command {
 
 func AddCmd(fs afero.Fs) cli.Command {
 	return cli.Command{
-		Name:      "add",
-		ShortName: "a",
-		Usage:     "Adds a project to the current story",
-		Flags:     []cli.Flag{cli.BoolFlag{Name: "ci", Usage: "clone without modifying .meta"}},
+		Name:  "add",
+		Usage: "Adds a project to the current story",
+		Flags: []cli.Flag{cli.BoolFlag{Name: "ci", Usage: "clone without modifying .meta"}},
 		Action: func(c *cli.Context) error {
 			if !isStory {
 				return ErrNotWorkingOnAStory
@@ -324,9 +320,8 @@ func AddCmd(fs afero.Fs) cli.Command {
 
 func RemoveCmd(fs afero.Fs) cli.Command {
 	return cli.Command{
-		Name:      "remove",
-		ShortName: "rm",
-		Usage:     "Removes a project from the current story",
+		Name:  "remove",
+		Usage: "Removes a project from the current story",
 		Action: func(c *cli.Context) error {
 			if !isStory {
 				return ErrNotWorkingOnAStory
@@ -440,9 +435,8 @@ func PinCmd(fs afero.Fs) cli.Command {
 
 func CommitCmd(fs afero.Fs) cli.Command {
 	return cli.Command{
-		Name:      "commit",
-		ShortName: "co",
-		Usage:     "Commits code across the current story",
+		Name:  "commit",
+		Usage: "Commits code across the current story",
 		Flags: []cli.Flag{
 			cli.StringFlag{Name: "message, m", Usage: "Commit message"},
 		},
@@ -533,9 +527,8 @@ func CommitCmd(fs afero.Fs) cli.Command {
 
 func PushCmd(fs afero.Fs) cli.Command {
 	return cli.Command{
-		Name:      "push",
-		ShortName: "p",
-		Usage:     "Pushes commits across the current story",
+		Name:  "push",
+		Usage: "Pushes commits across the current story",
 		Action: cli.ActionFunc(func(c *cli.Context) error {
 			if !isStory {
 				return ErrNotWorkingOnAStory
