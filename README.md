@@ -8,6 +8,7 @@
 testing, container building and deployments when working with meta-repos containing a large number of inter-dependent
 `node` projects.
 
+- [Installation](#installation)
 - [The .meta File](#the-meta-file)
 - [Commands](#commands)
   * [Create](#create)
@@ -21,6 +22,27 @@ testing, container building and deployments when working with meta-repos contain
   * [Remove](#remove)
   * [Commit](#commit)
   * [Push](#push)
+  * [Pin](#pin)
+  * [Prepare](#prepare)
+
+# Installation
+
+## Go Get
+```bash
+go get -u github.com/LGUG2Z/story
+```
+
+## Homebrew
+```bash
+brew tap LGUG2Z/tap
+brew install LGUG2Z/tap/story
+```
+
+## Bash Completion
+Add the following to your `.bashrc` or `.zshrc`
+```bash
+PROG=story source /usr/local/etc/bash_completion.d/story
+```
 
 # The .meta File
 There are two types of `.meta` files used by `story`, which are both supersets of the `.meta` file used by
@@ -170,3 +192,15 @@ find . -maxdepth 1 -type d -not -path "./.git" -not -path "." -exec bash -c "cd 
 `story push` will:
 * Push local commits in all story projects to the story branch on remote `origin`
 * Push local commits on the meta-repo to the story branch on remote `origin`
+
+
+## Pin
+`story pin` will:
+* Update the `package.json` files of all projects to pin them to the current commit hashes stored in `.meta.hashes`
+
+This should be done before running the `story prepare` command below, and after merging in the latest code from the trunk branch.
+
+## Prepare
+`story prepare` will:
+* Move the current `story` `.meta` file to `story/story-name.json` ready to be committed
+* Restore the original `.meta` file ready for a merge back to `master`
