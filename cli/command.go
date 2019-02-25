@@ -139,9 +139,8 @@ func ResetCmd(fs afero.Fs) cli.Command {
 
 func ListCmd(fs afero.Fs) cli.Command {
 	return cli.Command{
-		Name:      "list",
-		ShortName: "ls",
-		Usage:     "Shows a list of projects added to the current story",
+		Name:  "list",
+		Usage: "Shows a list of projects added to the current story",
 		Action: func(c *cli.Context) error {
 			if !isStory {
 				return ErrNotWorkingOnAStory
@@ -167,9 +166,8 @@ func ListCmd(fs afero.Fs) cli.Command {
 
 func BlastRadiusCmd(fs afero.Fs) cli.Command {
 	return cli.Command{
-		Name:      "blastradius",
-		ShortName: "br",
-		Usage:     "Shows a list of current story's blast radius",
+		Name:  "blastradius",
+		Usage: "Shows a list of current story's blast radius",
 		Action: func(c *cli.Context) error {
 			if !isStory {
 				return ErrNotWorkingOnAStory
@@ -205,9 +203,8 @@ func BlastRadiusCmd(fs afero.Fs) cli.Command {
 
 func ArtifactsCmd(fs afero.Fs) cli.Command {
 	return cli.Command{
-		Name:      "artifacts",
-		ShortName: "art",
-		Usage:     "Shows a list of artifacts to be built and deployed for the current story",
+		Name:  "artifacts",
+		Usage: "Shows a list of artifacts to be built and deployed for the current story",
 		Action: func(c *cli.Context) error {
 			if !isStory {
 				return ErrNotWorkingOnAStory
@@ -235,10 +232,9 @@ func ArtifactsCmd(fs afero.Fs) cli.Command {
 
 func AddCmd(fs afero.Fs) cli.Command {
 	return cli.Command{
-		Name:      "add",
-		ShortName: "a",
-		Usage:     "Adds a project to the current story",
-		Flags:     []cli.Flag{cli.BoolFlag{Name: "ci", Usage: "clone without modifying .meta"}},
+		Name:  "add",
+		Usage: "Adds a project to the current story",
+		Flags: []cli.Flag{cli.BoolFlag{Name: "ci", Usage: "clone without modifying .meta"}},
 		Action: func(c *cli.Context) error {
 			if !isStory {
 				return ErrNotWorkingOnAStory
@@ -324,9 +320,8 @@ func AddCmd(fs afero.Fs) cli.Command {
 
 func RemoveCmd(fs afero.Fs) cli.Command {
 	return cli.Command{
-		Name:      "remove",
-		ShortName: "rm",
-		Usage:     "Removes a project from the current story",
+		Name:  "remove",
+		Usage: "Removes a project from the current story",
 		Action: func(c *cli.Context) error {
 			if !isStory {
 				return ErrNotWorkingOnAStory
@@ -397,11 +392,51 @@ func RemoveCmd(fs afero.Fs) cli.Command {
 	}
 }
 
+func PinCmd(fs afero.Fs) cli.Command {
+	return cli.Command{
+		Name:  "pin",
+		Usage: "Pins code in the current story",
+		Action: cli.ActionFunc(func(c *cli.Context) error {
+			if !isStory {
+				return ErrNotWorkingOnAStory
+			}
+
+			if c.Args().Present() {
+				return ErrCommandTakesNoArguments
+			}
+
+			story, err := manifest.LoadStory(fs)
+			if err != nil {
+				return err
+			}
+
+			var projectList []string
+			for project := range story.Projects {
+				projectList = append(projectList, project)
+			}
+
+			// Update all of the package.json files where any other added project is used
+			for project := range story.Projects {
+				p := node.PackageJSON{}
+				if err := p.Load(fs, project); err != nil {
+					return err
+				}
+
+				p.SetPrivateDependencyBranchesToCommitHashes(story, projectList...)
+				p.Write(fs, project)
+
+				printGitOutput("package.json updated", project)
+			}
+
+			return nil
+		}),
+	}
+}
+
 func CommitCmd(fs afero.Fs) cli.Command {
 	return cli.Command{
-		Name:      "commit",
-		ShortName: "co",
-		Usage:     "Commits code across the current story",
+		Name:  "commit",
+		Usage: "Commits code across the current story",
 		Flags: []cli.Flag{
 			cli.StringFlag{Name: "message, m", Usage: "Commit message"},
 		},
@@ -444,6 +479,7 @@ func CommitCmd(fs afero.Fs) cli.Command {
 			// Format the hashes to the GitHub format to link to a specific commit
 			var hashMessages []string
 			for project, hash := range hashes {
+				// TODO: switch depending on GitHub or GitLab for now. Maybe more later
 				commitUrl := fmt.Sprintf("https://github.com/%s/%s/commit/%s", story.Orgranisation, project, hash)
 				hashMessages = append(hashMessages, commitUrl)
 			}
@@ -491,9 +527,8 @@ func CommitCmd(fs afero.Fs) cli.Command {
 
 func PushCmd(fs afero.Fs) cli.Command {
 	return cli.Command{
-		Name:      "push",
-		ShortName: "p",
-		Usage:     "Pushes commits across the current story",
+		Name:  "push",
+		Usage: "Pushes commits across the current story",
 		Action: cli.ActionFunc(func(c *cli.Context) error {
 			if !isStory {
 				return ErrNotWorkingOnAStory
@@ -550,32 +585,7 @@ func PrepareCmd(fs afero.Fs) cli.Command {
 				return err
 			}
 
-			mergePrepMessage := fmt.Sprintf("Preparing story %s for merge", story.Name)
-
-			// Unpin dependencies in package.json files from branch
-			for project := range story.Projects {
-				p := node.PackageJSON{}
-				if err := p.Load(fs, project); err != nil {
-					return err
-				}
-
-				p.ResetPrivateDependencyBranchesToMaster(story.Name)
-				p.Write(fs, project)
-
-				// Stage the modified package.json file
-				_, err := git.Add(git.AddOpts{Project: project, Files: []string{"package.json"}})
-				if err != nil {
-					return err
-				}
-
-				// Commit the modified package.json file
-				output, err := git.Commit(git.CommitOpts{Project: project, Messages: []string{mergePrepMessage}})
-				if err != nil {
-					return err
-				}
-
-				printGitOutput(output, project)
-			}
+			mergePrepMessage := fmt.Sprintf("Preparing %s for merge", story.Name)
 
 			// Update the story hashes
 			hashes, err := story.GetCommitHashes(fs)

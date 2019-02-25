@@ -130,7 +130,7 @@ func (s *Story) AddToManifest(allProjects map[string]string, project string) err
 		s.Projects = make(map[string]string)
 	}
 
-	s.Projects[project] = fmt.Sprintf("git@github.com:%s/%s.git", s.Orgranisation, project)
+	s.Projects[project] = allProjects[project]
 
 	return nil
 }

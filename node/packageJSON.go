@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/spf13/afero"
+	"github.com/LGUG2Z/story/manifest"
 )
 
 type PackageJSON struct {
@@ -133,9 +134,20 @@ func (p *PackageJSON) Write(fs afero.Fs, project string) error {
 }
 
 func (p *PackageJSON) setPrivateDependencyBranchToStory(dependency, story string) {
-	if strings.HasSuffix(p.Dependencies[dependency], ".git") {
+	// TODO: Update this to strip out any commit hashes
+	if strings.Contains(p.Dependencies[dependency], ".git") {
 		// Append #story-branch-name to the current git+ssh string
-		p.Dependencies[dependency] = fmt.Sprintf("%s#%s", p.Dependencies[dependency], story)
+		s := strings.Split(p.Dependencies[dependency], "#")
+		p.Dependencies[dependency] = fmt.Sprintf("%s#%s", s[0], story)
+	}
+}
+
+func (p *PackageJSON) setPrivateDependencyBranchToCommitHash(dependency, commitHash string) {
+	// TODO: Update this to strip out any commit hashes
+	if strings.Contains(p.Dependencies[dependency], ".git") {
+		// Append #story-branch-name to the current git+ssh string
+		s := strings.Split(p.Dependencies[dependency], "#")
+		p.Dependencies[dependency] = fmt.Sprintf("%s#%s", s[0], commitHash)
 	}
 }
 
@@ -144,6 +156,16 @@ func (p *PackageJSON) ResetPrivateDependencyBranchesToMaster(story string) {
 	for pkg, src := range p.Dependencies {
 		if strings.HasSuffix(src, storyBranch) {
 			p.Dependencies[pkg] = strings.TrimSuffix(src, storyBranch)
+		}
+	}
+}
+
+func (p *PackageJSON) ResetPrivateDependencyBranchesToCommitHash(story *manifest.Story) {
+	storyBranch := fmt.Sprintf("#%s", story.Name)
+	for pkg, src := range p.Dependencies {
+		if strings.HasSuffix(src, storyBranch) {
+			p.Dependencies[pkg] = strings.TrimSuffix(src, storyBranch)
+			p.Dependencies[pkg] = fmt.Sprintf("%s#%s", p.Dependencies[pkg], story.Hashes[pkg])
 		}
 	}
 }
@@ -165,6 +187,14 @@ func (p *PackageJSON) SetPrivateDependencyBranchesToStory(story string, projects
 	for _, project := range projects {
 		if _, exists := p.Dependencies[project]; exists {
 			p.setPrivateDependencyBranchToStory(project, story)
+		}
+	}
+}
+
+func (p *PackageJSON) SetPrivateDependencyBranchesToCommitHashes(story *manifest.Story, projects ...string) {
+	for _, project := range projects {
+		if _, exists := p.Dependencies[project]; exists {
+			p.setPrivateDependencyBranchToStory(project, story.Hashes[project])
 		}
 	}
 }
