@@ -567,6 +567,45 @@ func PushCmd(fs afero.Fs) cli.Command {
 }
 
 // TODO: Add tests
+func UnpinCmd(fs afero.Fs) cli.Command {
+	return cli.Command{
+		Name:  "unpin",
+		Usage: "Unpins code in the current story",
+		Action: cli.ActionFunc(func(c *cli.Context) error {
+			if !isStory {
+				return ErrNotWorkingOnAStory
+			}
+
+			if c.Args().Present() {
+				return ErrCommandTakesNoArguments
+			}
+
+			story, err := manifest.LoadStory(fs)
+			if err != nil {
+				return err
+			}
+
+			// Unpin dependencies in package.json files from branch
+			for project := range story.Projects {
+				p := node.PackageJSON{}
+				if err := p.Load(fs, project); err != nil {
+					return err
+				}
+
+				p.ResetPrivateDependencyBranchesToMaster(story.Name)
+				if err := p.Write(fs, project); err != nil {
+					return err
+				}
+
+				printGitOutput(fmt.Sprintf("Unpinned all package.json dependencies from branch %s", story.Name), project)
+			}
+
+			return nil
+		}),
+	}
+}
+
+// TODO: Add tests
 func PrepareCmd(fs afero.Fs) cli.Command {
 	return cli.Command{
 		Name:  "prepare",

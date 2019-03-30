@@ -35,8 +35,8 @@ install:
 	go install ${LDFLAGS}
 
 fmt:
-	gofmt -s -w cli main.go
-	goimports -w cli main.go
+	gofmt -s -w cli git manifest node main.go
+	goimports -w cli git manifest node main.go
 
 release:
 	goreleaser --rm-dist

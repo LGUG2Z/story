@@ -7,8 +7,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/spf13/afero"
 	"github.com/LGUG2Z/story/manifest"
+	"github.com/spf13/afero"
 )
 
 type PackageJSON struct {
