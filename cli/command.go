@@ -585,6 +585,8 @@ func UnpinCmd(fs afero.Fs) cli.Command {
 				return err
 			}
 
+			messages := []string{fmt.Sprintf("Resetting branches from %s to master [skip ci]", story.Name)}
+
 			// Unpin dependencies in package.json files from branch
 			for project := range story.Projects {
 				p := node.PackageJSON{}
@@ -597,8 +599,74 @@ func UnpinCmd(fs afero.Fs) cli.Command {
 					return err
 				}
 
-				printGitOutput(fmt.Sprintf("Unpinned all package.json dependencies from branch %s", story.Name), project)
+				// Stage the modified package.json file
+				_, err := git.Add(git.AddOpts{Project: project, Files: []string{"package.json"}})
+				if err != nil {
+					return err
+				}
+
+				// Commit the modified package.json file
+				output, err := git.Commit(git.CommitOpts{Project: project, Messages: messages})
+				if err != nil {
+					return err
+				}
+
+				printGitOutput(output, project)
 			}
+
+			// Update the hashes in the meta file and write it out
+			hashes, err := story.GetCommitHashes(fs)
+			if err != nil {
+				return err
+			}
+
+			story.Hashes = hashes
+			if err := story.Write(fs); err != nil {
+				return err
+			}
+
+			// Format the hashes to the GitHub format to link to a specific commit
+			var hashMessages []string
+			for project, hash := range hashes {
+				commitUrl := fmt.Sprintf("https://github.com/%s/%s/commit/%s", story.Orgranisation, project, hash)
+				hashMessages = append(hashMessages, commitUrl)
+			}
+
+			// Add the hashes to the slice for git commit messages
+			sort.Strings(hashMessages)
+			messages = append(messages, strings.Join(hashMessages, "\n"))
+
+			// Add the blast radius to the slice for git commit messages
+			var brMap = make(map[string]bool)
+
+			for _, br := range story.BlastRadius {
+				for _, p := range br {
+					if !brMap[p] {
+						brMap[p] = true
+					}
+				}
+			}
+
+			var brSlice []string
+			for project := range brMap {
+				brSlice = append(brSlice, project)
+			}
+
+			messages = append(messages, fmt.Sprintf("Blast Radius: %s", strings.Join(brSlice, " ")))
+
+			// Stage the story file
+			output, err := git.Add(git.AddOpts{Files: []string{".meta"}})
+			if err != nil {
+				return err
+			}
+
+			// Commit on the metarepo
+			output, err = git.Commit(git.CommitOpts{Messages: messages})
+			if err != nil {
+				return err
+			}
+
+			printGitOutput(output, "metarepo")
 
 			return nil
 		}),
@@ -624,7 +692,7 @@ func PrepareCmd(fs afero.Fs) cli.Command {
 				return err
 			}
 
-			mergePrepMessage := fmt.Sprintf("Preparing %s for merge", story.Name)
+			mergePrepMessage := fmt.Sprintf("Preparing %s for merge [skip ci]", story.Name)
 
 			// Update the story hashes
 			hashes, err := story.GetCommitHashes(fs)
