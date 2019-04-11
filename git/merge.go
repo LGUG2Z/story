@@ -6,13 +6,13 @@ import (
 	"strings"
 )
 
-type FetchMergeOpts struct {
+type FetchOpts struct {
 	Branch  string
 	Remote  string
 	Project string
 }
 
-func FetchMerge(opts FetchMergeOpts) (string, error) {
+func Fetch(opts FetchOpts) (string, error) {
 	var args []string
 	args = append(args, "fetch", opts.Remote, fmt.Sprintf("%s:%s", opts.Branch, opts.Branch))
 

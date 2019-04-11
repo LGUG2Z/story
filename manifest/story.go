@@ -46,6 +46,21 @@ func LoadStory(fs afero.Fs) (*Story, error) {
 	return s, nil
 }
 
+func LoadStoryFromBranchName(fs afero.Fs, branchName string) (*Story, error) {
+	storyNameWithoutSlash := strings.Replace(branchName, "/", "-", 1)
+	bytes, err := afero.ReadFile(fs, fmt.Sprintf("story/%s.json", storyNameWithoutSlash))
+	if err != nil {
+		return nil, err
+	}
+
+	s := &Story{}
+	if err := json.Unmarshal(bytes, &s); err != nil {
+		return nil, err
+	}
+
+	return s, nil
+}
+
 func (s *Story) Write(fs afero.Fs) error {
 	bytes, err := json.MarshalIndent(s, "", "  ")
 	if err != nil {
