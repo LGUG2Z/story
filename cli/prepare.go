@@ -31,7 +31,7 @@ func PrepareCmd(fs afero.Fs) cli.Command {
 				return err
 			}
 
-			mergePrepMessage := fmt.Sprintf("Preparing %s for merge [skip ci]", story.Name)
+			mergePrepMessage := fmt.Sprintf("[story prepare] Preparing %s for merge [skip ci]", story.Name)
 
 			// Update the story hashes
 			hashes, err := story.GetCommitHashes(fs)

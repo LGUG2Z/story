@@ -33,7 +33,7 @@ func CommitCmd(fs afero.Fs) cli.Command {
 			}
 
 			// Commit in all the projects
-			messages := []string{c.String("message")}
+			messages := []string{fmt.Sprintf("[story commit] %s", c.String("message"))}
 			for project := range story.Projects {
 				output, err := git.Commit(git.CommitOpts{Project: project, Messages: messages})
 				if err != nil {

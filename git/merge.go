@@ -33,11 +33,17 @@ type MergeOpts struct {
 	SourceBranch      string
 	DestinationBranch string
 	Project           string
+	Squash            bool
 }
 
 func Merge(opts MergeOpts) (string, error) {
 	var args []string
 	args = append(args, "merge", opts.SourceBranch)
+	if opts.Squash {
+		args = append(args, "--squash")
+	}
+
+	args = append(args, opts.SourceBranch)
 
 	command := exec.Command("git", args...)
 	if opts.Project != "" {

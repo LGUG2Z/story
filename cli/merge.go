@@ -32,6 +32,8 @@ func MergeCmd(fs afero.Fs) cli.Command {
 				return err
 			}
 
+			messages := []string{fmt.Sprintf("[story merge] merging %s to master", currentBranch)}
+
 			// Checkout master and merge story in all projects
 			for project := range story.Projects {
 				checkoutMasterOutput, err := git.CheckoutBranch(git.CheckoutBranchOpts{
@@ -50,6 +52,7 @@ func MergeCmd(fs afero.Fs) cli.Command {
 					SourceBranch:      currentBranch,
 					DestinationBranch: "master",
 					Project:           project,
+					Squash:            true,
 				})
 
 				if err != nil {
@@ -57,18 +60,41 @@ func MergeCmd(fs afero.Fs) cli.Command {
 				}
 
 				printGitOutput(mergeOutput, project)
+
+				commitOutput, err := git.Commit(
+					git.CommitOpts{
+						Project:  project,
+						Messages: messages,
+					},
+				)
+
+				if err != nil {
+					return err
+				}
+
+				printGitOutput(commitOutput, project)
 			}
 
 			// Merge story into master on the metarepo
-			output, err := git.Merge(git.MergeOpts{
+			mergeOutput, err := git.Merge(git.MergeOpts{
 				SourceBranch:      currentBranch,
 				DestinationBranch: "master",
+				Squash:            true,
 			})
+
 			if err != nil {
 				return err
 			}
 
-			printGitOutput(output, "metarepo")
+			printGitOutput(mergeOutput, "metarepo")
+
+			commitOutput, err := git.Commit(git.CommitOpts{Messages: messages})
+
+			if err != nil {
+				return err
+			}
+
+			printGitOutput(commitOutput, "metarepo")
 
 			return nil
 		}),

@@ -31,7 +31,7 @@ func UnpinCmd(fs afero.Fs) cli.Command {
 				return err
 			}
 
-			messages := []string{fmt.Sprintf("Resetting branches from %s to master [skip ci]", story.Name)}
+			messages := []string{fmt.Sprintf("[story unpin] Resetting branches from %s to master [skip ci]", story.Name)}
 
 			// Unpin dependencies in package.json files from branch
 			for project := range story.Projects {
