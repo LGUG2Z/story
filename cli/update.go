@@ -11,6 +11,9 @@ func UpdateCmd(fs afero.Fs) cli.Command {
 	return cli.Command{
 		Name:  "update",
 		Usage: "Updates code from the upstream master branch across the current story",
+		Flags: []cli.Flag{
+			cli.StringFlag{Name: "from-branch", Usage: "Update from a specific branch", Value: "master"},
+		},
 		Action: cli.ActionFunc(func(c *cli.Context) error {
 			if !isStory {
 				return ErrNotWorkingOnAStory
@@ -25,10 +28,12 @@ func UpdateCmd(fs afero.Fs) cli.Command {
 				return err
 			}
 
+			sourceBranch := c.String("from-branch")
+
 			// Pull and merge master in all the projects
 			for project := range story.Projects {
 				_, err := git.Fetch(git.FetchOpts{
-					Branch:  "master",
+					Branch:  sourceBranch,
 					Remote:  "origin",
 					Project: project,
 				})
@@ -38,7 +43,7 @@ func UpdateCmd(fs afero.Fs) cli.Command {
 				}
 
 				mergeOutput, err := git.Merge(git.MergeOpts{
-					SourceBranch:      "master",
+					SourceBranch:      sourceBranch,
 					DestinationBranch: story.Name,
 					Project:           project,
 				})
