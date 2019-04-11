@@ -1,8 +1,6 @@
 package cli
 
 import (
-	"fmt"
-
 	"github.com/LGUG2Z/story/git"
 	"github.com/LGUG2Z/story/manifest"
 	"github.com/spf13/afero"
@@ -29,8 +27,7 @@ func UpdateCmd(fs afero.Fs) cli.Command {
 
 			// Pull and merge master in all the projects
 			for project := range story.Projects {
-				fmt.Println("running fetch", project)
-				fetchOutput, err := git.Fetch(git.FetchOpts{
+				_, err := git.Fetch(git.FetchOpts{
 					Branch:  "master",
 					Remote:  "origin",
 					Project: project,
@@ -40,9 +37,6 @@ func UpdateCmd(fs afero.Fs) cli.Command {
 					return err
 				}
 
-				printGitOutput(fetchOutput, project)
-
-				fmt.Println("running merge", project)
 				mergeOutput, err := git.Merge(git.MergeOpts{
 					SourceBranch:      "master",
 					DestinationBranch: story.Name,
