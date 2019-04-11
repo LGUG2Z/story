@@ -69,6 +69,8 @@ func App() *cli.App {
 		UnpinCmd(fs),
 		PinCmd(fs),
 		PrepareCmd(fs),
+		UpdateCmd(fs),
+		MergeCmd(fs),
 	}
 
 	return app
