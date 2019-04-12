@@ -71,6 +71,7 @@ func App() *cli.App {
 		PrepareCmd(fs),
 		UpdateCmd(fs),
 		MergeCmd(fs),
+		PRCmd(fs),
 	}
 
 	return app

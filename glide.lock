@@ -1,5 +1,5 @@
-hash: 939974a1f9887e76c9ccf28536d7ff309cc97e2607028aef7b93470b98575d05
-updated: 2018-06-14T14:12:04.333926+01:00
+hash: 3aa4d3b07f41f3de5ed6237ef167f59050c976197133f808b18762b744e12dcf
+updated: 2019-04-12T13:23:09.474969+01:00
 imports:
 - name: github.com/AlexsJones/cli
   version: ec4e2a07c8a3a526b19d42a62facad11dbf22f00
@@ -25,6 +25,14 @@ imports:
   - utils
 - name: github.com/fatih/color
   version: 5b77d2a35fb0ede96d138fc9a99f5c9b6aef11b4
+- name: github.com/google/go-github
+  version: 7462feb2032c2da9e3b85e9b04e6853a6e9e14ca
+  subpackages:
+  - github
+- name: github.com/google/go-querystring
+  version: c8c88dbee036db4e4808d1f2ec8c2e15e11c3f80
+  subpackages:
+  - query
 - name: github.com/jbenet/go-context
   version: d14ea06fba99483203c19d92cfcd13ebe73135f4
   subpackages:
@@ -90,6 +98,8 @@ imports:
   - html
   - html/atom
   - html/charset
+- name: golang.org/x/oauth2
+  version: 9f3314589c9a9136388751d9adae6b0ed400978a
 - name: golang.org/x/sys
   version: bff228c7b664c5fce602223a05fb708fd8654986
   subpackages:
