@@ -1,8 +1,6 @@
 package cli
 
 import (
-	"fmt"
-
 	"github.com/LGUG2Z/story/git"
 	"github.com/LGUG2Z/story/manifest"
 	"github.com/spf13/afero"
@@ -32,15 +30,6 @@ func PushCmd(fs afero.Fs) cli.Command {
 			var branch string
 
 			if len(c.String("from-manifest")) > 0 {
-				currentBranch, err := git.GetCurrentBranch(fs, ".")
-				if err != nil {
-					return err
-				}
-
-				if currentBranch != "master" {
-					return fmt.Errorf("--from-manifest can only be used when on the master branch of the metarepo")
-				}
-
 				story, err = manifest.LoadStoryFromBranchName(fs, c.String("from-manifest"))
 				if err != nil {
 					return err
