@@ -33,7 +33,7 @@ func CreateCmd(fs afero.Fs) cli.Command {
 				return err
 			}
 
-			printGitOutput(output, "metarepo")
+			printGitOutput(output, metarepo)
 
 			return story.Write(fs)
 		},
