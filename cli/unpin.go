@@ -112,7 +112,7 @@ func UnpinCmd(fs afero.Fs) cli.Command {
 				return err
 			}
 
-			printGitOutput(output, "metarepo")
+			printGitOutput(output, metarepo)
 
 			return nil
 		}),

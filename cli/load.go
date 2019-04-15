@@ -26,7 +26,7 @@ func LoadCmd(fs afero.Fs) cli.Command {
 				return err
 			}
 
-			printGitOutput(output, "metarepo")
+			printGitOutput(output, metarepo)
 
 			story, err := manifest.LoadStory(fs)
 			if err != nil {

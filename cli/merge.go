@@ -39,7 +39,7 @@ func MergeCmd(fs afero.Fs) cli.Command {
 			for project := range story.Projects {
 				color.Green(project)
 				checkoutBranchOutput, err := git.CheckoutBranch(git.CheckoutBranchOpts{
-					Branch:  "master",
+					Branch:  trunk,
 					Project: project,
 					Create:  false,
 				})
@@ -52,7 +52,7 @@ func MergeCmd(fs afero.Fs) cli.Command {
 
 				mergeOutput, err := git.Merge(git.MergeOpts{
 					SourceBranch:      story.Name,
-					DestinationBranch: "master",
+					DestinationBranch: trunk,
 					Project:           project,
 					Squash:            true,
 				})
@@ -77,9 +77,9 @@ func MergeCmd(fs afero.Fs) cli.Command {
 				fmt.Println(commitOutput)
 			}
 
-			color.Green("metarepo")
+			color.Green(metarepo)
 			checkoutBranchOutput, err := git.CheckoutBranch(git.CheckoutBranchOpts{
-				Branch: "master",
+				Branch: trunk,
 				Create: false,
 			})
 
@@ -92,7 +92,7 @@ func MergeCmd(fs afero.Fs) cli.Command {
 			// Merge story into master on the metarepo
 			mergeOutput, err := git.Merge(git.MergeOpts{
 				SourceBranch:      story.Name,
-				DestinationBranch: "master",
+				DestinationBranch: trunk,
 				Squash:            true,
 			})
 

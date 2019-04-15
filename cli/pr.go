@@ -51,12 +51,14 @@ func PRCmd(fs afero.Fs) cli.Command {
 				),
 			)
 
+			story.Projects[metarepo] = ""
+
 		ProjectLoop:
 			for project := range story.Projects {
 				newPR := github.NewPullRequest{
 					Title:               github.String(story.Name),
 					Head:                github.String(story.Name),
-					Base:                github.String("master"),
+					Base:                github.String(trunk),
 					Body:                github.String(c.String("issue")),
 					MaintainerCanModify: github.Bool(true),
 				}
@@ -66,7 +68,7 @@ func PRCmd(fs afero.Fs) cli.Command {
 					if strings.Contains(err.Error(), "A pull request already exists") {
 						pullRequests, _, err := client.PullRequests.List(ctx, story.Orgranisation, project, &github.PullRequestListOptions{
 							State: "open",
-							Base:  "master",
+							Base:  trunk,
 						})
 
 						if err != nil {
@@ -109,9 +111,7 @@ func PRCmd(fs afero.Fs) cli.Command {
 				if url, ok := r["html_url"]; ok {
 					fmt.Println(url)
 				}
-
 			}
-
 			return nil
 		},
 	}

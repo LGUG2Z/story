@@ -35,7 +35,7 @@ func PushCmd(fs afero.Fs) cli.Command {
 					return err
 				}
 
-				branch = "master"
+				branch = trunk
 			} else {
 				story, err = manifest.LoadStory(fs)
 				if err != nil {
@@ -61,7 +61,7 @@ func PushCmd(fs afero.Fs) cli.Command {
 				return err
 			}
 
-			printGitOutput(output, "metarepo")
+			printGitOutput(output, metarepo)
 
 			return nil
 		}),

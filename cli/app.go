@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"os"
+	"path/filepath"
 	"time"
 
 	"fmt"
@@ -12,6 +14,7 @@ import (
 
 var isStory bool
 var trunk string
+var metarepo string
 
 var (
 	Version string
@@ -38,8 +41,9 @@ func App() *cli.App {
 
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
-			Name:  "trunk",
-			Value: "master",
+			Name:   "trunk",
+			Value:  "master",
+			EnvVar: "STORY_TRUNK",
 		},
 	}
 
@@ -51,6 +55,13 @@ func App() *cli.App {
 		}
 
 		isStory = branch != trunk
+
+		path, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+
+		metarepo = filepath.Base(path)
 
 		return nil
 	}
