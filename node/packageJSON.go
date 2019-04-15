@@ -46,6 +46,11 @@ type PackageJSON struct {
 	Jest                 *JestConfig         `json:"jest,omitempty"`
 	Babel                *BabelConfig        `json:"babel,omitempty"`
 	EslintConfig         *EslintConfig       `json:"eslintConfig,omitempty"`
+	Nyc                  Nyc                 `json:"nyc,omitempty"`
+}
+
+type Nyc struct {
+	Exclude []string `json:"exclude"`
 }
 
 type EslintConfig struct {
