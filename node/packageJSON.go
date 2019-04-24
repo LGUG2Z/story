@@ -27,14 +27,12 @@ func (p *PackageJSON) Load(fs afero.Fs, project string) error {
 	}
 
 	p.Raw = orderedmap.New()
-	p.Dependencies = make(map[string]string)
-	p.DevDependencies = make(map[string]string)
-
 	if err = p.Raw.UnmarshalJSON(b); err != nil {
 		return err
 	}
 
 	if dependencies, ok := p.Raw.Get("dependencies"); ok {
+		p.Dependencies = make(map[string]string)
 		d := dependencies.(orderedmap.OrderedMap)
 		for _, k := range d.Keys() {
 			if v, ok := d.Get(k); ok {
@@ -44,6 +42,7 @@ func (p *PackageJSON) Load(fs afero.Fs, project string) error {
 	}
 
 	if devDependencies, ok := p.Raw.Get("devDependencies"); ok {
+		p.DevDependencies = make(map[string]string)
 		d := devDependencies.(orderedmap.OrderedMap)
 		for _, k := range d.Keys() {
 			if v, ok := d.Get(k); ok {
@@ -66,8 +65,13 @@ func (p *PackageJSON) Write(fs afero.Fs, project string) error {
 		return err
 	}
 
-	p.Raw.Set("dependencies", json.RawMessage(dependencies))
-	p.Raw.Set("devDependencies", json.RawMessage(devDependencies))
+	if p.Dependencies != nil {
+		p.Raw.Set("dependencies", json.RawMessage(dependencies))
+	}
+
+	if p.DevDependencies != nil {
+		p.Raw.Set("devDependencies", json.RawMessage(devDependencies))
+	}
 
 	b, err := json.MarshalIndent(&p.Raw, "", "  ")
 	if err != nil {
@@ -77,6 +81,7 @@ func (p *PackageJSON) Write(fs afero.Fs, project string) error {
 	b = bytes.Replace(b, []byte("\\u003c"), []byte("<"), -1)
 	b = bytes.Replace(b, []byte("\\u003e"), []byte(">"), -1)
 	b = bytes.Replace(b, []byte("\\u0026"), []byte("&"), -1)
+	b = append(b, "\n"...)
 
 	filename := fmt.Sprintf("%s/package.json", project)
 	return afero.WriteFile(fs, filename, b, os.FileMode(0666))
