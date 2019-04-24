@@ -25,7 +25,6 @@ var invalidFile = []byte(`{
 
 func packageJSONWithDependencies(dependencies ...string) []byte {
 	pkg := node.PackageJSON{
-		Name:         "test",
 		Dependencies: make(map[string]string),
 	}
 
@@ -59,7 +58,7 @@ var _ = Describe("PackageJSON", func() {
 			Expect(p.Load(fs, "valid")).To(Succeed())
 
 			// Then I expect it to be unmarshalled into an object
-			Expect(p.Name).To(Equal("test"))
+			Expect(p.Dependencies["one"]).To(Equal("git+ssh://git@github.com:TestOrg/one.git"))
 		})
 
 		It("It should throw an error when trying to load an invalid package.json file", func() {
