@@ -12,7 +12,7 @@ func UpdateCmd(fs afero.Fs) cli.Command {
 		Name:  "update",
 		Usage: "Updates code from the upstream master branch across the current story",
 		Flags: []cli.Flag{
-			cli.StringFlag{Name: "from-branch", Usage: "Update from a specific branch", Value: trunk},
+			cli.StringFlag{Name: "from-branch", Usage: "Update from a specific branch", Value: "master"},
 		},
 		Action: cli.ActionFunc(func(c *cli.Context) error {
 			if !isStory {

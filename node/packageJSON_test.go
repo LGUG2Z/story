@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/LGUG2Z/story/node"
+	"github.com/iancoleman/orderedmap"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
@@ -25,15 +26,19 @@ var invalidFile = []byte(`{
 
 func packageJSONWithDependencies(dependencies ...string) []byte {
 	pkg := node.PackageJSON{
-		Name:         "test",
 		Dependencies: make(map[string]string),
+		Raw:          orderedmap.New(),
 	}
 
+	deps := make(map[string]string)
+	pkg.Raw.Set("dependencies", deps)
+
 	for _, dep := range dependencies {
+		deps[dep] = fmt.Sprintf("git+ssh://git@github.com:TestOrg/%s.git", dep)
 		pkg.Dependencies[dep] = fmt.Sprintf("git+ssh://git@github.com:TestOrg/%s.git", dep)
 	}
 
-	bytes, _ := json.MarshalIndent(pkg, "", "  ")
+	bytes, _ := json.MarshalIndent(pkg.Raw, "", "  ")
 	return bytes
 }
 
@@ -59,7 +64,7 @@ var _ = Describe("PackageJSON", func() {
 			Expect(p.Load(fs, "valid")).To(Succeed())
 
 			// Then I expect it to be unmarshalled into an object
-			Expect(p.Name).To(Equal("test"))
+			Expect(p.Dependencies["one"]).To(Equal("git+ssh://git@github.com:TestOrg/one.git"))
 		})
 
 		It("It should throw an error when trying to load an invalid package.json file", func() {
@@ -79,21 +84,30 @@ var _ = Describe("PackageJSON", func() {
 
 	Describe("Writing a file", func() {
 		It("Should write out the object to a package.json file", func() {
-			// Given a project
+			// Given a project with a valid package.json file
+			validFile := packageJSONWithDependencies("one", "two", "three")
 			if err := fs.MkdirAll("valid", os.FileMode(0700)); err != nil {
 				Fail(err.Error())
 			}
 
-			// And a PackageJSON object
-			b := packageJSONWithDependencies("one", "two", "three")
-			Expect(json.Unmarshal(b, &p)).To(Succeed())
+			if err := afero.WriteFile(fs, "valid/package.json", validFile, os.FileMode(0600)); err != nil {
+				Fail(err.Error())
+			}
+
+			// When I load the file
+			Expect(p.Load(fs, "valid")).To(Succeed())
+
+			// And make a change to the file
+			p.Dependencies["new"] = "test"
 
 			// When I write the object for a project
 			Expect(p.Write(fs, "valid")).To(Succeed())
 
 			// Then the file is written
-			_, err := afero.ReadFile(fs, "valid/package.json")
+			content, err := afero.ReadFile(fs, "valid/package.json")
 			Expect(err).NotTo(HaveOccurred())
+
+			Expect(string(content)).To(ContainSubstring(`"new": "test"`))
 		})
 	})
 
