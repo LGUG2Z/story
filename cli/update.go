@@ -32,13 +32,11 @@ func UpdateCmd(fs afero.Fs) cli.Command {
 
 			// Pull and merge master in all the projects
 			for project := range story.Projects {
-				_, err := git.Fetch(git.FetchOpts{
+				if _, err := git.Fetch(git.FetchOpts{
 					Branch:  sourceBranch,
 					Remote:  "origin",
 					Project: project,
-				})
-
-				if err != nil {
+				}); err != nil {
 					return err
 				}
 
@@ -54,6 +52,25 @@ func UpdateCmd(fs afero.Fs) cli.Command {
 
 				printGitOutput(mergeOutput, project)
 			}
+
+			// Pull and merge master in the metarepo
+			if _, err := git.Fetch(git.FetchOpts{
+				Branch: sourceBranch,
+				Remote: "origin",
+			}); err != nil {
+				return err
+			}
+
+			mergeOutput, err := git.Merge(git.MergeOpts{
+				SourceBranch:      sourceBranch,
+				DestinationBranch: story.Name,
+			})
+
+			if err != nil {
+				return err
+			}
+
+			printGitOutput(mergeOutput, metarepo)
 
 			return nil
 		}),
