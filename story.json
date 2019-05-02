@@ -1,0 +1,76 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/Story",
+    "definitions": {
+        "Story": {
+            "type": "object",
+            "description": "Story .meta file",
+            "additionalProperties": false,
+            "properties": {
+                "story": {
+                    "type": "string",
+                    "description": "Name of the story"
+                },
+                "organisation": {
+                    "type": "string",
+                    "description": "Name of the GitHub user/organisation under which repos are kept"
+                },
+                "projects": {
+                    "type": "object",
+                    "description": "Map of metarepo projects in the story and their git+ssh URLs",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "hashes": {
+                    "type": "object",
+                    "description": "Current commit hashes of every project in the story",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "blastRadius": {
+                    "type": "object",
+                    "description": "Current blast radius of changes across the metarepo for this story",
+                    "additionalProperties": {
+                        "anyOf": [
+                            {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    }
+                },
+                "artifacts": {
+                    "type": "object",
+                    "description": "Deployable artifacts within the metarepo",
+                    "additionalProperties": {
+                        "type": "boolean"
+                    }
+                },
+                "allProjects": {
+                    "type": "object",
+                    "description": "Map of all metarepo projects and their git+ssh URLs",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            },
+            "required": [
+                "allProjects",
+                "artifacts",
+                "blastRadius",
+                "hashes",
+                "organisation",
+                "projects",
+                "story"
+            ],
+            "title": "Story"
+        }
+    }
+}

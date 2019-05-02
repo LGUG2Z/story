@@ -1,0 +1,37 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/Meta",
+    "definitions": {
+        "Meta": {
+            "type": "object",
+            "description": "Trunk .meta file",
+            "additionalProperties": false,
+            "properties": {
+                "artifacts": {
+                    "type": "object",
+                    "description": "Deployable artifacts within the metarepo",
+                    "additionalProperties": {
+                        "type": "boolean"
+                    }
+                },
+                "organisation": {
+                    "type": "string",
+                    "description": "Name of the GitHub user/organisation under which repos are kept"
+                },
+                "projects": {
+                    "type": "object",
+                    "description": "Map of all metarepo projects and their git+ssh URLs",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            },
+            "required": [
+                "artifacts",
+                "organisation",
+                "projects"
+            ],
+            "title": "Meta"
+        }
+    }
+}

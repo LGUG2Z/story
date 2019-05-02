@@ -5,7 +5,7 @@
 # ############################################################################## #
 
 # Check for required command tools to build or stop immediately
-EXECUTABLES = git go find pwd goreleaser
+EXECUTABLES = git go find pwd
 K := $(foreach exec,$(EXECUTABLES),\
         $(if $(shell which $(exec)),some string,$(error "No $(exec) in PATH)))
 
@@ -33,6 +33,7 @@ build_all:
 
 install:
 	go install ${LDFLAGS}
+	ln -sf ${GOPATH}/src/github.com/LGUG2Z/story/bash_autocomplete /usr/local/etc/bash_completion.d/story
 
 fmt:
 	gofmt -s -w cli git manifest node main.go

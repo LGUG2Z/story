@@ -9,27 +9,26 @@ testing, container building and deployments when working with meta-repos contain
 `node` projects.
 
 - [Installation](#installation)
+  * [Go Get](#go-get)
+  * [Homebrew](#homebrew)
+  * [Bash Completion](#bash-completion)
 - [The .meta File](#the-meta-file)
+  * [The trunk `.meta` file](#the-trunk--meta--file)
+  * [The `story` `.meta` file](#the--story---meta--file)
 - [Commands](#commands)
-  * [Create](#create)
-  * [Load](#load)
-  * [Reset](#reset)
-  * [List](#list)
-  * [Artifacts](#artifacts)
-  * [Blast Radius](#blast-radius)
-  * [Add](#add)
-    + [--ci Flag](#--ci-flag)
-  * [Remove](#remove)
-  * [Commit](#commit)
-  * [Push](#push)
-  * [Pin](#pin)
-  * [Prepare](#prepare)
+- [Workflow Examples](#workflow-examples)
+  * [Starting a New Story](#starting-a-new-story)
+  * [Updating From Trunk Branches](#updating-from-trunk-branches)
+  * [Migrating Existing Branches to a New Story](#migrating-existing-branches-to-a-new-story)
+  * [Switching Stories](#switching-stories)
+  * [Merging Completed Stories](#merging-completed-stories)
 
 # Installation
-
 ## Go Get
 ```bash
 go get -u github.com/LGUG2Z/story
+cd $GOPATH/src/github.com/LGUG2Z/story
+make install
 ```
 
 ## Homebrew
@@ -45,6 +44,7 @@ PROG=story source /usr/local/etc/bash_completion.d/story
 ```
 
 # The .meta File
+## The trunk `.meta` file
 There are two types of `.meta` files used by `story`, which are both supersets of the `.meta` file used by
  [meta](https://github.com/mateodelnorte/meta):
 
@@ -70,6 +70,9 @@ The `.meta` file for the overall meta-repo includes two extra keys, `artifacts` 
 
 `organisation` refers to the name of the organisation on GitHub where private repositories are hosted.
 
+A JSONSchema for the trunk `.meta` file is available [here](meta.json).
+
+## The `story` `.meta` file
 The `.meta` file for stories includes a number of extra keys on top of those introduced above:
 ```json
 {
@@ -113,94 +116,130 @@ This latter file is automatically generated and maintained by `story` commands. 
 to a story will update the `projects`, `hashes`, `blastRadius` and `artifacts` keys accordingly, and making a commit
 across the meta-repo will update the `hashes` key before making a final commit to the meta-repo.
 
+A JSONSchema for the `story` `.meta` file is available [here](story.json).
+
 # Commands
-## Create
-`story create [story-name]` will:
-* Checkout a new branch on the meta-repo repository with the story name
-* Create a new `.meta` file for the story
+```
+NAME:
+   story - A workflow tool for implementing stories across a node meta-repo
 
-## Load
-`story load [story-name]` will:
-* Checkout the desired branch on the meta-repo if it exists
-* Checkout the desired branch on all projects in the story if they exist
+USAGE:
+   story [global options] command [command options] [arguments...]
 
-## Reset
-`story reset` will:
-* Checkout the trunk branch (default `master`) on all projects of a story
+VERSION:
+   0.3.4
 
-## List
-`story list` will:
-* Print a list of all projects in the current story
+AUTHOR:
+   J. Iqbal <jade@beamery.com>
 
-## Artifacts
-`story artifacts` will:
-* Print a list of all projects that should be built and deployed in the current story
+COMMANDS:
+     create       Creates a new story
+     load         Loads an existing story
+     reset        Resets all story branches to trunk branches
+     add          Adds a project to the current story
+     remove       Removes a project from the current story
+     list         Shows a list of projects added to the current story
+     blastradius  Shows a list of current story's blast radius
+     artifacts    Shows a list of artifacts to be built and deployed for the current story
+     commit       Commits code across the current story
+     push         Pushes commits across the current story
+     unpin        Unpins code in the current story
+     pin          Pins code in the current story
+     prepare      Prepares a story for merges to trunk
+     update       Updates code from the upstream master branch across the current story
+     merge        Merges prepared code to master branches across the current story
+     pr           Opens pull requests for the current story
+     help, h      Shows a list of commands or help for one command
 
-## Blast Radius
-`story blastradius` will:
-* Print a list of all projects within the blast radius of the current story
-
-## Add
-`story add [projects]` will:
-* Add the projects to the `.meta` file
-* Checkout a story branch for the projects
-* Update the blast radius of the story
-* Update the commit hashes of projects in the story
-* Update `package.json` files to pin references to projects in the story to the story branch
-### --ci Flag
-`story add --ci [projects]` will attempt to clone a project in the meta-repo that may not be checked
-out for a given story. A specific use case that the `--ci` flag targets is running unit tests for the
- entire blast radius of a story in CI tools:
-
-```bash
-# check out the projects modified in the story
-story load story/new-navbar
-
-# hecks out projects not directly modified in the story, but within the blast radius,
-# without making changes to the .meta file
-story add --ci $(story blastradius)
-
-# run unit tests for all projects in the story and all projects within the blast radius
-find . -maxdepth 1 -type d -not -path "./.git" -not -path "." -exec bash -c "cd {} && yarn test" \;
+GLOBAL OPTIONS:
+   --trunk value  (default: "master") [$STORY_TRUNK]
+   --help, -h     show help
+   --version, -v  print the version
 ```
 
-## Remove
-`story remove [projects]` will:
-* Remove the projects from the `.meta` file
-* Delete story branches for the projects
-* Update the blast radius of the story
-* Update the commit hashes of projects in the story
-* Update `package.json` files to unpin references to projects in the story from the story branch
+# Workflow Examples
+## Starting a New Story
+```bash
+# navigate to your metarepo
+cd ~/metarepo
 
-## Commit
-`story commit [-m "commit msg"]` will:
-* Commit staged files in all story projects with the given commit message
-* Update the commit hashes of projects in the story
-* Commit the updated `.meta` file to the meta-repo, with links to each project commit in the extended commit message:
-    * ```
-      commit 8f59319fc2d0403199fb2c6148b5ab67919424f3 (HEAD -> story/commit-example)
-      Author: jiqb <gthbji@ml1.net>
-      Date:   Mon Jun 18 08:23:30 2018 +0100
+# create the story
+story create story/sso-login
 
-      This is the message passed via the -m flag of the commit command 
+# add the repoos you will be working on
+story add login-service marketing-app
 
-      https://github.com/SecretOrg/api/commit/ad4f419b7d65292ef28ab8d1d3ef4346a6bdebe4
-      https://github.com/SecretOrg/lib-2/commit/e1f99366bcc71df8bccf6f3df66271a319c33240
-* Update `package.json` files to unpin references to projects in the story from the story branch
+# stage the changes made by creating and adding to the story
+meta git add -p
 
-## Push
-`story push` will:
-* Push local commits in all story projects to the story branch on remote `origin`
-* Push local commits on the meta-repo to the story branch on remote `origin`
+# make an initial commit across all the repos
+story commit -m "add login-service and marketing-app, update package.json files"
 
+# push branches in all story repos
+story push
 
-## Pin
-`story pin` will:
-* Update the `package.json` files of all projects to pin them to the current commit hashes stored in `.meta.hashes`
+# open PRs linked to a central issue
+story pr --issue https://github.com/SecretOrg/tracking-board/issues/9
+```
 
-This should be done before running the `story prepare` command below, and after merging in the latest code from the trunk branch.
+## Updating From Trunk Branches
+```bash
+# load the story
+story load story/email-login
 
-## Prepare
-`story prepare` will:
-* Move the current `story` `.meta` file to `story/story-name.json` ready to be committed
-* Restore the original `.meta` file ready for a merge back to `master`
+# merge in changes from trunk on every repo in the story
+story update
+```
+
+## Migrating Existing Branches to a New Story
+```bash
+# create a new story
+story new story/otp-login
+
+# merge in changes from other existing on every repo in the story
+story update --from-branch feature/otp-login
+```
+
+## Switching Stories
+```bash
+# reset to the trunk branches
+story reset
+
+# load another story
+story load story/sso-acl
+```
+
+## Merging Completed Stories
+```bash
+# load the story
+story load story/sso-login
+
+# make sure we have the latest from master
+story update
+
+##########
+# EITHER #
+##########
+# reset the package.json dependencies to point to master
+story unpin
+
+##########
+# OR     #
+##########
+# pin the package.json dependencies to a specific commit hash
+story pin
+
+# archive the story manifest and reset the .meta file for merge
+story prepare
+
+# push final changes to the story branches
+# still on branch story/sso-login at this point
+story push --from-manifest story/sso-login
+
+# merge the story to the trunk branch across all story repos
+story merge
+
+# push just the repos that were changed in the story post-merge
+# on master branch at this point
+story push --from-manifest story/sso-login
+```
