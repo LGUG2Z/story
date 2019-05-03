@@ -47,7 +47,7 @@ func LoadStory(fs afero.Fs) (*Story, error) {
 }
 
 func LoadStoryFromBranchName(fs afero.Fs, branchName string) (*Story, error) {
-	storyNameWithoutSlash := strings.Replace(branchName, "/", "-", 1)
+	storyNameWithoutSlash := strings.Replace(branchName, "/", "-", 0)
 	bytes, err := afero.ReadFile(fs, fmt.Sprintf("story/%s.json", storyNameWithoutSlash))
 	if err != nil {
 		return nil, err
