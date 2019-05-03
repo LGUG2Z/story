@@ -92,13 +92,15 @@ func PRCmd(fs afero.Fs) cli.Command {
 						continue
 					}
 
-					color.Red("call error")
 					return err
 				}
-				defer resp.Body.Close()
 
 				body, err := ioutil.ReadAll(resp.Body)
 				if err != nil {
+					return err
+				}
+
+				if err = resp.Body.Close(); err != nil {
 					return err
 				}
 
