@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"strings"
 
 	"github.com/LGUG2Z/story/manifest"
@@ -92,13 +93,20 @@ func PRCmd(fs afero.Fs) cli.Command {
 						continue
 					}
 
-					color.Red("call error")
 					return err
 				}
-				defer resp.Body.Close()
+
+				if resp.StatusCode != http.StatusCreated {
+					fmt.Printf("Call to open PR on GitHub repository %s failed: response code %d\n", project, resp.StatusCode)
+					continue ProjectLoop
+				}
 
 				body, err := ioutil.ReadAll(resp.Body)
 				if err != nil {
+					return err
+				}
+
+				if err = resp.Body.Close(); err != nil {
 					return err
 				}
 
