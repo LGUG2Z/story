@@ -54,7 +54,7 @@ func PrepareCmd(fs afero.Fs) cli.Command {
 			}
 
 			// Write the story .meta to the story folder and stage the file
-			storyNameWithoutSlash := strings.Replace(story.Name, "/", "-", 1)
+			storyNameWithoutSlash := strings.ReplaceAll(story.Name, "/", "-")
 			if err := story.WriteToLocation(fs, fmt.Sprintf("story/%s.json", storyNameWithoutSlash)); err != nil {
 				return err
 			}
