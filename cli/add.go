@@ -83,6 +83,10 @@ func AddCmd(fs afero.Fs) cli.Command {
 
 			// Update all of the package.json files where any other added project is used
 			for project := range story.Projects {
+				if ignore[project] {
+					continue
+				}
+
 				p := node.PackageJSON{}
 				if err := p.Load(fs, project); err != nil {
 					return err
