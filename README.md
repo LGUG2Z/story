@@ -210,6 +210,7 @@ story load story/sso-acl
 ```
 
 ## Merging Completed Stories
+### Using the GitHub PR Merge API
 ```bash
 # load the story
 story load story/sso-login
@@ -234,7 +235,38 @@ story prepare
 
 # push final changes to the story branches
 # still on branch story/sso-login at this point
-story push --from-manifest story/sso-login
+story push --from-manifest story/sso-login --story-branch
+
+# merge using the github pr merge api
+story merge --github
+```
+
+### Using Plain Git
+```bash
+# load the story
+story load story/sso-login
+
+# make sure we have the latest from master
+story update
+
+##########
+# EITHER #
+##########
+# reset the package.json dependencies to point to master
+story unpin
+
+##########
+# OR     #
+##########
+# pin the package.json dependencies to a specific commit hash
+story pin
+
+# archive the story manifest and reset the .meta file for merge
+story prepare
+
+# push final changes to the story branches
+# still on branch story/sso-login at this point
+story push --from-manifest story/sso-login --story-branch
 
 # merge the story to the trunk branch across all story repos
 story merge
