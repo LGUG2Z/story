@@ -13,6 +13,7 @@ func PushCmd(fs afero.Fs) cli.Command {
 		Usage: "Pushes commits across the current story",
 		Flags: []cli.Flag{
 			cli.StringFlag{Name: "from-manifest", Usage: "Use a manifest from a specific story to determine which repos to push"},
+			cli.BoolFlag{Name: "story-branch", Usage: "Push on the story branch instead of the trunk branch when using --from-manifest)"},
 		},
 		Action: cli.ActionFunc(func(c *cli.Context) error {
 			if len(c.String("from-manifest")) == 0 {
@@ -35,7 +36,11 @@ func PushCmd(fs afero.Fs) cli.Command {
 					return err
 				}
 
-				branch = trunk
+				if c.Bool("story-branch") {
+					branch = story.Name
+				} else {
+					branch = trunk
+				}
 			} else {
 				story, err = manifest.LoadStory(fs)
 				if err != nil {

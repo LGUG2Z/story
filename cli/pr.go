@@ -2,18 +2,15 @@ package cli
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"strings"
+	"time"
 
 	"github.com/LGUG2Z/story/manifest"
 	"github.com/fatih/color"
 	"github.com/google/go-github/github"
 	"github.com/spf13/afero"
 	"github.com/urfave/cli"
-	"golang.org/x/oauth2"
 )
 
 func PRCmd(fs afero.Fs) cli.Command {
@@ -26,11 +23,11 @@ func PRCmd(fs afero.Fs) cli.Command {
 		},
 		Action: func(c *cli.Context) error {
 			if len(c.String("github-api-token")) == 0 {
-				return fmt.Errorf("an API token for GitHub is required, either using --github-api-token or $GITHUB_API_TOKEN")
+				return ErrGitHubAPITokenRequired
 			}
 
 			if len(c.String("issue")) == 0 {
-				return fmt.Errorf("an issue URL is required")
+				return ErrIssueURLRequired
 			}
 
 			if !isStory {
@@ -43,14 +40,7 @@ func PRCmd(fs afero.Fs) cli.Command {
 			}
 
 			ctx := context.Background()
-			client := github.NewClient(
-				oauth2.NewClient(
-					ctx,
-					oauth2.StaticTokenSource(
-						&oauth2.Token{AccessToken: c.String("github-api-token")},
-					),
-				),
-			)
+			client := getGitHubClient(ctx, c.String("github-api-token"))
 
 			story.Projects[metarepo] = ""
 
@@ -64,61 +54,45 @@ func PRCmd(fs afero.Fs) cli.Command {
 					MaintainerCanModify: github.Bool(true),
 				}
 
-				_, resp, err := client.PullRequests.Create(ctx, story.Orgranisation, project, &newPR)
+				// Try to create a new pull request
+				pullRequest, _, err := client.PullRequests.Create(ctx, story.Orgranisation, project, &newPR)
 				if err != nil {
+					// If there is already a pull request for this branch
 					if strings.Contains(err.Error(), "A pull request already exists") {
-						pullRequests, _, err := client.PullRequests.List(ctx, story.Orgranisation, project, &github.PullRequestListOptions{
-							State: "open",
-							Base:  trunk,
-						})
-
+						pullRequest, err := getOpenPullRequest(client, ctx, story, project)
 						if err != nil {
-							return err
-						}
-
-						for _, pr := range pullRequests {
-							if *pr.Title == story.Name {
-								color.Green(project)
-								fmt.Println(*pr.HTMLURL)
+							switch err.Error() {
+							// This should never actually happen
+							case ErrCouldNotFindOpenPullRequest(story.Name).Error():
+								fmt.Println(err.Error())
 								continue ProjectLoop
+							// If there is an error making the call to get all pull requests
+							default:
+								return err
 							}
 						}
 
-						return fmt.Errorf("a pull request already exists but the url could not be retrieved")
+						// Output the URL of the existing open pull request
+						color.Green(project)
+						fmt.Println(*pullRequest.HTMLURL)
+						continue ProjectLoop
 					}
 
-					if strings.Contains(err.Error(), "No commits between master") {
+					// If there is a branch with no difference from master
+					if strings.Contains(err.Error(), "No commits between") {
 						color.Green(project)
 						fmt.Println("branch is identical to master, can't open a pull request yet")
-						continue
+						continue ProjectLoop
 					}
 
-					return err
-				}
-
-				if resp.StatusCode != http.StatusCreated {
-					fmt.Printf("Call to open PR on GitHub repository %s failed: response code %d\n", project, resp.StatusCode)
-					continue ProjectLoop
-				}
-
-				body, err := ioutil.ReadAll(resp.Body)
-				if err != nil {
-					return err
-				}
-
-				if err = resp.Body.Close(); err != nil {
-					return err
-				}
-
-				r := map[string]interface{}{}
-				if err := json.Unmarshal(body, r); err != nil {
+					// Any other error from the call
 					return err
 				}
 
 				color.Green(project)
-				if url, ok := r["html_url"]; ok {
-					fmt.Println(url)
-				}
+				fmt.Println(*pullRequest.HTMLURL)
+
+				time.Sleep(1 * time.Second)
 			}
 			return nil
 		},
