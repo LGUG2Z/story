@@ -22,6 +22,8 @@ testing, container building and deployments when working with meta-repos contain
   * [Migrating Existing Branches to a New Story](#migrating-existing-branches-to-a-new-story)
   * [Switching Stories](#switching-stories)
   * [Merging Completed Stories](#merging-completed-stories)
+    + [Using the GitHub PR Merge API](#using-the-github-pr-merge-api)
+    + [Using Plain Git](#using-plain-git)
 
 # Installation
 ## Go Get
