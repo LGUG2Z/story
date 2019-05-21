@@ -15,6 +15,7 @@ testing, container building and deployments when working with meta-repos contain
 - [The .meta File](#the-meta-file)
   * [The trunk `.meta` file](#the-trunk--meta--file)
   * [The `story` `.meta` file](#the--story---meta--file)
+  * [`.storyignore`](#-storyignore-)
 - [Commands](#commands)
 - [Workflow Examples](#workflow-examples)
   * [Starting a New Story](#starting-a-new-story)
@@ -119,6 +120,18 @@ to a story will update the `projects`, `hashes`, `blastRadius` and `artifacts` k
 across the meta-repo will update the `hashes` key before making a final commit to the meta-repo.
 
 A JSONSchema for the `story` `.meta` file is available [here](story.json).
+
+## `.storyignore`
+Optionally, a `.storyignore` file can be committed to the root of the metarepo containing the names of repositories
+in which the `package.json` files should never be modified by `story`. Repo names should be separated by new lines.
+Glob and regex patterns are not supported. The state of these repositories will still be tracked by the `.story` `.meta`
+file.
+
+```
+# .storyignore
+lib-3
+legacy-app
+```
 
 # Commands
 ```

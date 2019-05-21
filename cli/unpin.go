@@ -35,6 +35,10 @@ func UnpinCmd(fs afero.Fs) cli.Command {
 
 			// Unpin dependencies in package.json files from branch
 			for project := range story.Projects {
+				if !ignore[project] {
+					continue
+				}
+
 				p := node.PackageJSON{}
 				if err := p.Load(fs, project); err != nil {
 					return err

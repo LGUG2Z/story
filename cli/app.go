@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/LGUG2Z/story/git"
+	"github.com/LGUG2Z/story/manifest"
 	"github.com/spf13/afero"
 	"github.com/urfave/cli"
 )
@@ -15,6 +16,7 @@ import (
 var isStory bool
 var trunk string
 var metarepo string
+var ignore map[string]bool
 
 var (
 	Version string
@@ -63,7 +65,8 @@ func App() *cli.App {
 
 		metarepo = filepath.Base(path)
 
-		return nil
+		ignore, err = manifest.LoadStoryIgnore(path)
+		return err
 	}
 
 	app.Commands = []cli.Command{
