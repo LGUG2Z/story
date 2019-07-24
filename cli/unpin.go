@@ -35,7 +35,7 @@ func UnpinCmd(fs afero.Fs) cli.Command {
 
 			// Unpin dependencies in package.json files from branch
 			for project := range story.Projects {
-				if !ignore[project] {
+				if ignore[project] {
 					continue
 				}
 
